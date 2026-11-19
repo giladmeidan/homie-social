@@ -1,0 +1,24 @@
+{
+  "name": "homie-social",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Publishes homie reels to Instagram after a Telegram approval",
+  "scripts": {
+    "test": "node --test",
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail",
+    "db:init": "wrangler d1 execute homie-social --remote --file=schema.sql",
+    "enqueue": "node scripts/enqueue.mjs",
+    "telegram:webhook": "node scripts/telegram-webhook.mjs",
+    "health": "node scripts/health.mjs",
+    "dashboard": "node scripts/dashboard.mjs",
+    "render": "python3 scripts/render-batch.py"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,24 @@
+name = "homie-social"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "homie-social"
+database_id = "08949e2f-d6bc-4e1d-b49c-31d56837bee3"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "homie-social-media"
+
+[vars]
+IG_API_VERSION = "v25.0"
+# homie.il's Instagram account id (from Meta Business Suite). Required for business / system-user tokens.
+IG_USER_ID = "17841412250945873"
+TIME_ZONE = "Asia/Jerusalem"
+
+# Secrets (set with `npx wrangler secret put NAME`, never written in this file):
+#   IG_ACCESS_TOKEN, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TELEGRAM_WEBHOOK_SECRET, ADMIN_TOKEN
