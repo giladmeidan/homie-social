@@ -79,6 +79,49 @@ def validate(item):
         raise ValueError(f'name must be lowercase letters, digits and dashes, got {item["name"]!r}')
     if not os.path.exists(os.path.join(EPISODES, item['episode'] + '.js')):
         raise ValueError(f'content/episodes/{item["episode"]}.js not found')
+    check_not_repeat(item)
+
+
+def _opening(caption):
+    """First non-empty caption line, reduced to letters and digits so emoji,
+    punctuation and spacing don't hide a repeat."""
+    for line in caption.splitlines():
+        norm = re.sub(r'[\W_]+', '', line, flags=re.UNICODE).lower()
+        if norm:
+            return norm
+    return ''
+
+
+def _episode_body(path):
+    """Episode source without whitespace and without the seed/number lines that
+    a lazy copy would change, so a re-numbered copy still counts as a copy."""
+    src = open(path, encoding='utf8').read()
+    src = re.sub(r'seed\s*:\s*\d+', 'seed:0', src)
+    return re.sub(r'\s+', '', src)
+
+
+def check_not_repeat(item):
+    """Refuses a reel that is an exact copy of an earlier one: the same episode
+    source, or a caption that opens with the same line as an earlier caption."""
+    me = os.path.join(EPISODES, item['episode'] + '.js')
+    body = _episode_body(me)
+    for other in glob.glob(os.path.join(EPISODES, 'r*.js')):
+        if os.path.abspath(other) != os.path.abspath(me) and _episode_body(other) == body:
+            raise ValueError(f'episode is identical to {os.path.basename(other)}')
+    opening = _opening(item['caption'])
+    if not opening:
+        return
+    for bf in glob.glob(os.path.join(ROOT, 'content', 'batches', '*.json')):
+        try:
+            batch = json.load(open(bf, encoding='utf8'))
+        except (ValueError, OSError):
+            continue
+        for prev in batch.get('reels', []):
+            if prev.get('reel') == item['reel'] or not prev.get('caption'):
+                continue
+            if _opening(prev['caption']) == opening:
+                raise ValueError(f'caption opens with the same line as reel {prev.get("reel")} '
+                                 f'({os.path.basename(bf)})')
 
 
 def build(item):

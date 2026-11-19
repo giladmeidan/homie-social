@@ -96,6 +96,7 @@ nightly task ──push──▶ content/episodes/rNN.js + content/batches/<date
 - **Render engine:** `content/engine/` (same files as the series engine in the Project, fonts included). Episodes in `content/episodes/`.
 - **Batch file:** `content/batches/<date>.json` lists the reels with their caption, title and optional publish time (`"at": "2026-11-21 19:00"`, Israel time). Format at the top of `scripts/render-batch.py`.
 - **Checks before sending:** 1080×1920, 30 fps, audio present, length matches the episode, loudness and no clipping (series bible section 4). A reel that fails is not sent.
+- **No exact repeats:** a reel is refused if its episode file is identical to an earlier one (ignoring spacing and the audio seed) or its caption opens with the same line as an earlier caption in `content/batches/`.
 - **No double sends:** a sent reel gets `content/sent/<reel>.json`, committed back by the workflow, and is never rendered again. A failed one gets `content/failed/<reel>.json` and is skipped until you run the workflow by hand with **Retry failed** ticked.
 - **When something fails** the bot posts a message in your approval chat with a link to the run.
 - **Videos** stay downloadable as a run artifact for 14 days.
