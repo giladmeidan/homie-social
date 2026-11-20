@@ -21,6 +21,8 @@ with sync_playwright() as p:
     json.dump(pg.evaluate("window.EVENTS"),open(f'{reel}_events.json','w'))
     _cfg=pg.evaluate("window.AUDIO||null")
     if _cfg is not None: json.dump(_cfg,open(f'{reel}_cfg.json','w'))
+    _voice=pg.evaluate("window.VOICE||null")   # optional ElevenLabs voiceover, used by voice.py
+    if _voice is not None: json.dump(_voice,open(f'{reel}_voice.json','w'),ensure_ascii=False)
     for name,t0,t1 in pg.evaluate("window.SCENES"):
         if args and name not in args: continue
         n0,n1=round(t0*FPS),round(t1*FPS)

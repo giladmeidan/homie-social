@@ -19,6 +19,10 @@ on:
         description: 'Render and check only, do not send to Telegram'
         type: boolean
         default: false
+      voice_check:
+        description: 'Only check the ElevenLabs key: credits left and which models speak Hebrew'
+        type: boolean
+        default: false
 
 permissions:
   contents: write # commits the content/sent and content/failed markers
@@ -28,7 +32,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  voice-check:
+    if: inputs.voice_check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the ElevenLabs key
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: python3 scripts/elevenlabs-check.py
+
   render:
+    if: ${{ !inputs.voice_check }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -52,8 +68,21 @@ jobs:
           pip install -r content/engine/requirements.txt
           python -m playwright install --with-deps chromium
 
+      - name: Restore ElevenLabs voice clips
+        uses: actions/cache@v4
+        with:
+          path: build/voice-cache
+          key: voice-${{ github.run_id }}
+          restore-keys: voice-
+
       - name: Render, check and send
         env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
+          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED }}
+          VOICE_CACHE: ${{ github.workspace }}/build/voice-cache
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           HOMIE_SOCIAL_URL: ${{ secrets.HOMIE_SOCIAL_URL }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           RETRY_FAILED: ${{ inputs.retry_failed && '1' || '0' }}

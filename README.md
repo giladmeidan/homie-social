@@ -133,6 +133,22 @@ Repo secrets (Settings → Secrets and variables → Actions): `HOMIE_SOCIAL_URL
 
 Run locally: `npm run render` (add `DRY_RUN=1` in front to render and check without sending).
 
+## Voiceover (ElevenLabs, optional)
+
+An episode gets a Hebrew voiceover by defining `window.VOICE` (format at the top of
+`content/engine/voice.py`): a list of `[time, line]`. On render, `voice.py` makes one clip per
+line, places it at its time (speeding it up by at most x1.25 if it runs into the next line, else
+the reel fails with the line to shorten), ducks the music under it and sets loudness to -18.5 dB.
+Clips are cached in the Actions cache, so a re-render costs no credits.
+
+- Secret `ELEVENLABS_API_KEY`. Optional repo variable `ELEVENLABS_VOICE_ID` (default: premade "Sarah").
+- Without the secret, voiced reels are skipped as "waiting" (no marker) and render on the next run after it is added.
+- **Licensing:** the free ElevenLabs plan has no commercial license, so voiced reels are sent to Telegram as a
+  plain preview (no Approve button) and never enter the posting queue. Set the repo variable
+  `ELEVENLABS_LICENSED=1` only after moving to a paid plan; from then on voiced reels go to approval like any other.
+- Actions > Render reels > Run workflow > "voice_check" prints the plan, characters left and which models list Hebrew.
+- Test reel: 9001 (`content/batches/test-voice-2026-11-20.json`), reel H14 with a voiceover.
+
 ## How it behaves
 
 - **Publishing takes a minute or two.** After approval Instagram downloads and processes the video; a job that runs every minute publishes it when ready.

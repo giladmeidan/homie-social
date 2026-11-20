@@ -42,6 +42,10 @@ EXPORT = os.path.join(BUILD, 'export')
 TZ = ZoneInfo('Asia/Jerusalem')
 
 DRY_RUN = os.environ.get('DRY_RUN') == '1'
+# Voiced reels (window.VOICE, ElevenLabs) are only sent to the approval queue when the
+# ElevenLabs plan includes a commercial license. Until then they go to Telegram as a
+# plain preview message, which has no Approve button and can't be posted.
+VOICE_LICENSED = os.environ.get('ELEVENLABS_LICENSED') == '1'
 RETRY_FAILED = os.environ.get('RETRY_FAILED') == '1'
 
 # Loudness window. The series bible aims for a mean of -21..-17 dB; outside the
@@ -141,7 +145,8 @@ def build(item):
         raise RuntimeError('build finished but no mp4 was written')
     cfg_path = os.path.join(work, ep + '_cfg.json')
     dur = json.load(open(cfg_path))['dur'] if os.path.exists(cfg_path) else None
-    return out, dur
+    voiced = os.path.exists(os.path.join(work, ep + '_voice.json'))
+    return out, dur, voiced
 
 
 def check(path, dur):
@@ -197,6 +202,16 @@ def enqueue(item, path):
     return m.group(1) if m else out.strip()
 
 
+def preview(item, path):
+    """Sends the video to Telegram as a plain message: for listening, not for posting."""
+    if DRY_RUN:
+        return 'dry-run'
+    text = (f"🎧 {item.get('title') or item['name']}\n"
+            'Voice preview (ElevenLabs free plan). Not in the approval queue and not for posting.')
+    out = sh(['node', os.path.join(ROOT, 'scripts', 'telegram-preview.mjs'), path, text], cwd=ROOT)
+    return 'preview ' + out.strip()[-80:]
+
+
 def main():
     files = sys.argv[1:] or sorted(glob.glob(os.path.join(ROOT, 'content', 'batches', '*.json')))
     results = []
@@ -212,13 +227,23 @@ def main():
                 continue
             if os.path.exists(marker(FAILED, reel)) and not RETRY_FAILED:
                 continue
+            ep_file = os.path.join(EPISODES, str(item.get('episode')) + '.js')
+            if (os.path.exists(ep_file) and 'window.VOICE' in open(ep_file, encoding='utf8').read()
+                    and not os.environ.get('ELEVENLABS_API_KEY')):
+                # no marker: it renders on the first run after the secret is added
+                results.append(('waiting', f'{label}: has a voiceover, waiting for the ELEVENLABS_API_KEY secret'))
+                continue
             t0 = time.time()
             print(f'::group::{label}', flush=True)
             try:
                 validate(item)
-                path, dur = build(item)
+                path, dur, voiced = build(item)
                 warnings, length = check(path, dur)
-                queued = enqueue(item, path)
+                if voiced and not VOICE_LICENSED:
+                    queued = preview(item, path)
+                    warnings.append('voiced: preview only (ElevenLabs free plan, not licensed for posting)')
+                else:
+                    queued = enqueue(item, path)
                 if not DRY_RUN:
                     write_marker(SENT, reel, {'reel': reel, 'name': item['name'], 'batch': batch.get('batch'),
                                               'queued_as': queued, 'length': round(length, 2), 'warnings': warnings,
