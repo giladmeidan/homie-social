@@ -76,8 +76,13 @@ GAIN = float(V.get('gain', 1.0))
 os.makedirs(CACHE, exist_ok=True)
 
 
+# Clips made on the free plan have no commercial license, so they are never reused once the
+# paid plan is on (ELEVENLABS_LICENSED=1): the plan is part of the cache key.
+PLAN = 'paid' if os.environ.get('ELEVENLABS_LICENSED') == '1' else 'free'
+
+
 def cache_path(text, model):
-    h = hashlib.sha256(json.dumps([text, VOICE, model, 'he', 2], ensure_ascii=False).encode()).hexdigest()[:24]
+    h = hashlib.sha256(json.dumps([text, VOICE, model, 'he', 2, PLAN], ensure_ascii=False).encode()).hexdigest()[:24]
     return os.path.join(CACHE, h + '.mp3')
 
 
@@ -165,6 +170,8 @@ if need and KEY and not ESTIMATE:
     left, tier = credits_left()
     if left is not None:
         print(f'ElevenLabs plan: {tier}, {left} characters left, this reel needs about {need}')
+        if PLAN == 'paid' and tier == 'free':
+            die('ELEVENLABS_LICENSED=1 but the key is on the free plan; voiced reels would be posted unlicensed')
         if left < need:
             die(f'only {left} ElevenLabs characters left this month, this reel needs {need}')
 

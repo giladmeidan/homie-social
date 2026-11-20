@@ -46,6 +46,7 @@ jobs:
         if: inputs.voice_check
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED }}
         run: python3 scripts/elevenlabs-check.py
       - name: Send voice samples to Telegram
         if: inputs.voice_audition != ''

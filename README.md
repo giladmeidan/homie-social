@@ -144,7 +144,7 @@ Clips are cached in the Actions cache, so a re-render costs no credits.
 
 - Secret `ELEVENLABS_API_KEY`. Optional repo variable `ELEVENLABS_VOICE_ID` (default: premade "Sarah").
 - Without the secret, voiced reels are skipped as "waiting" (no marker) and render on the next run after it is added.
-- **Licensing:** the free ElevenLabs plan has no commercial license, so voiced reels are sent to Telegram as a
+- **Licensing (Starter plan since 20.11.2026, `ELEVENLABS_LICENSED=1`):** clips made on the free plan are never reused (the plan is part of the cache key), and a key that is back on the free plan stops voiced renders. Before that: the free ElevenLabs plan has no commercial license, so voiced reels are sent to Telegram as a
   plain preview (no Approve button) and never enter the posting queue. Set the repo variable
   `ELEVENLABS_LICENSED=1` only after moving to a paid plan; from then on voiced reels go to approval like any other.
 - Actions > Render reels > Run workflow > "voice_check" prints the plan, characters left and which models list Hebrew.

@@ -26,7 +26,9 @@ else:
     left = sub['character_limit'] - sub['character_count']
     print(f"plan: {sub.get('tier')}  ·  {sub['character_count']}/{sub['character_limit']} used  ·  {left} left")
     print('commercial use: ' + ('NO (free plan) - keep ELEVENLABS_LICENSED unset' if sub.get('tier') == 'free'
-                                else 'paid plan - you can set the repo variable ELEVENLABS_LICENSED=1'))
+                                else 'paid plan - set the repo variable ELEVENLABS_LICENSED=1 (voiced reels then go to approval)'))
+    if os.environ.get('ELEVENLABS_LICENSED') == '1' and sub.get('tier') == 'free':
+        print('WARNING: ELEVENLABS_LICENSED=1 is set but the key is on the free plan')
 
 models = get('/v1/models')
 if isinstance(models, dict) and '_error' in models:
