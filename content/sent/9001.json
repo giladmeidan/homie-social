@@ -1,0 +1,11 @@
+{
+  "reel": 9001,
+  "name": "reel-9001-voice-test-move-in-photos",
+  "batch": "test-voice-2026-11-20",
+  "queued_as": "preview sent message 95",
+  "length": 23.0,
+  "warnings": [
+    "voiced: preview only (ElevenLabs free plan, not licensed for posting)"
+  ],
+  "sent_at": "2026-11-20T23:11:47+02:00"
+}
