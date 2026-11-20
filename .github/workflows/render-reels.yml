@@ -69,7 +69,7 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Restore ElevenLabs voice clips
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: build/voice-cache
           key: voice-${{ github.run_id }}
@@ -88,6 +88,13 @@ jobs:
           RETRY_FAILED: ${{ inputs.retry_failed && '1' || '0' }}
           DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
         run: python scripts/render-batch.py
+
+      - name: Save ElevenLabs voice clips (also when a reel failed, so paid clips aren't lost)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: build/voice-cache
+          key: voice-${{ github.run_id }}
 
       - name: Keep the videos for 14 days
         if: always()

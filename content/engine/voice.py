@@ -144,17 +144,23 @@ if music.ndim > 1:
     music = music.mean(axis=1)
 N = len(music); DUR = N / SR
 voice = np.zeros(N)
-for i, (t, text) in enumerate(LINES):
+placed, problems = [], []
+for i, (t, text) in enumerate(LINES):  # make every clip first, so one run reports every line that's too long
     path, used = tts(text)
     clip = decode(path)
     end = LINES[i + 1][0] - 0.12 if i + 1 < len(LINES) else DUR - 0.25
     slot = end - t
     length = len(clip) / SR
+    if length > slot * 1.25:
+        fit = int(len(text) * slot * 1.25 / length)
+        problems.append(f'{t}s: {length:.2f}s of speech for a {slot:.2f}s slot, cut to about {fit} characters: {text}')
+    placed.append((t, text, clip, slot, used))
+if problems:
+    die('lines too long for their slots (the clips are cached, only the shortened lines cost credits):\n  ' + '\n  '.join(problems))
+for t, text, clip, slot, used in placed:
     note = ''
-    if length > slot:
-        f = length / slot
-        if f > 1.25:
-            die(f'line at {t}s is {length:.2f}s but has only {slot:.2f}s before the next line; shorten it: {text}')
+    if len(clip) / SR > slot:
+        f = len(clip) / SR / slot
         clip = speed_up(clip, f); note = f' sped up x{f:.2f}'
     a = int(t * SR); b = min(N, a + len(clip))
     voice[a:b] += clip[:b - a]
