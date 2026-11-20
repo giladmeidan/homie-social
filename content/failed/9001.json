@@ -1,0 +1,7 @@
+{
+  "reel": 9001,
+  "name": "reel-9001-voice-test-move-in-photos",
+  "batch": "test-voice-2026-11-20",
+  "error": "bash build.sh r9001... failed:\ndone r9001 a 240\ndone r9001 b 228\ndone r9001 c 222\nok r9001\nElevenLabs plan: free, 9813 characters left, this reel needs about 214\nFAIL voice: line at 0.3s is 3.93s but has only 2.78s before the next line; shorten it: בעוד שנה מישהו ישאל: השריטה הזאת הייתה?",
+  "failed_at": "2026-11-20T23:06:06+02:00"
+}
