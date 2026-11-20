@@ -1,15 +1,19 @@
 # homie-social
 
-Publishes homie reels to Instagram. Nothing goes live without a tap on **Approve** in Telegram.
+Publishes homie reels to Instagram and drops them into TikTok as drafts. Nothing goes out without a tap on **Approve** in Telegram.
 
 ```
 finished mp4 ──enqueue──▶ Worker ──▶ Telegram: video + caption + [Approve] [Edit caption] [Reject]
                                               │ Approve
-                                              ▼
-                              Instagram processes the video ──▶ published ──▶ link sent to Telegram
+                          ┌───────────────────┴───────────────────┐
+                          ▼                                       ▼
+   Instagram processes ──▶ published ──▶ link      TikTok upload ──▶ draft in your TikTok inbox
+                                                                  ──▶ caption sent to Telegram to paste
 ```
 
-Runs on Cloudflare (Worker + D1 database + R2 storage). TikTok and the stats dashboard are not built yet.
+Runs on Cloudflare (Worker + D1 database + R2 storage).
+
+**Why TikTok is a draft, not a post:** TikTok only lets audited apps post publicly, and it does not audit tools that post to your own accounts. Upload mode (drafts) needs no audit. You finish each post in the TikTok app: tap the inbox notification, paste the caption, post. That step is also where you add a trending sound.
 
 ## One-time setup
 
@@ -58,6 +62,26 @@ npx wrangler secret put TELEGRAM_CHAT_ID      # the number from /id
 
 Only that chat can approve, reject or edit.
 
+### 5. TikTok (optional; without it everything is Instagram-only)
+
+1. At developers.tiktok.com sign in, go to **Manage apps** and create an app (Individual developer is fine).
+2. Add the products **Login Kit** and **Content Posting API**. Leave **Direct Post** off.
+3. Scopes: `user.info.basic` and `video.upload` for posting, plus `user.info.stats` and `video.list` for the dashboard.
+4. Login Kit → Web → Redirect URI: `https://homie-social.meidan-gilad.workers.dev/tiktok/callback` (exactly).
+5. Use the **Sandbox** tab: create a sandbox, add homie's TikTok account under **Target users**. Sandbox is enough for your own account; you don't have to submit the app for review.
+6. Copy the sandbox **Client key** and **Client secret**, then:
+
+```bash
+npx wrangler secret put TIKTOK_CLIENT_KEY
+npx wrangler secret put TIKTOK_CLIENT_SECRET
+npm run db:migrate:tiktok        # once, adds the TikTok columns to the existing database
+npm run deploy
+```
+
+7. Open the dashboard and click **Connect TikTok** (or go to `/dashboard/tiktok/connect`). Sign in with homie's TikTok account and allow access. Telegram confirms with "TikTok connected".
+
+The sign-in renews itself (the access token lasts 24 hours, the refresh token a year and rolls forward). If renewal fails you get a Telegram message; clicking **Connect TikTok** again fixes it.
+
 ## Daily use
 
 ```bash
@@ -69,16 +93,20 @@ npm run enqueue -- reel.mp4 --reel 44 --at "2026-11-21 19:00"
 
 # caption from a file or inline
 npm run enqueue -- reel.mp4 --caption-file caption.txt --title "Turtle ep 3"
+
+# Instagram only, no TikTok draft
+npm run enqueue -- reel.mp4 --reel 44 --no-tiktok
 ```
 
 In Telegram:
 
 | Action | What happens |
 | --- | --- |
-| ✅ Approve | Publishes now, or at the scheduled time |
+| ✅ Approve | Publishes to Instagram and sends the TikTok draft, now or at the scheduled time |
 | ✏️ Edit caption | Your next message becomes the caption, then it asks for approval again |
 | ❌ Reject | Nothing is posted |
 | 🔁 Retry | Shown when a publish failed |
+| 🔁 Retry TikTok | Shown when the TikTok draft failed. Instagram is not touched |
 | `/queue` | Lists recent reels and their status |
 | `/cancel` | Leaves caption editing |
 
@@ -111,6 +139,9 @@ Run locally: `npm run render` (add `DRY_RUN=1` in front to render and check with
 - **No double posts.** Each step is claimed in the database before it runs, so a double tap or overlapping runs cannot post twice.
 - **Failures are reported, not retried silently.** If a publish call fails or is interrupted, you get a message with a Retry button. When the message says to check Instagram first, do: the post may have gone through.
 - **The Instagram token renews itself** weekly (it lasts 60 days). If renewal fails you get a Telegram message. Setting a new `IG_ACCESS_TOKEN` secret always takes over.
+- **TikTok and Instagram are independent.** Each has its own status; a TikTok failure never blocks or repeats the Instagram post, and the other way round.
+- **Older reels can go to TikTok too.** In the dashboard's Publishing queue, each reel already published on Instagram has a **Send to TikTok** button. It sends a TikTok draft only and never posts to Instagram again.
+- **TikTok holds at most 5 waiting drafts per 24 hours.** With the hourly reels, post or delete drafts as they arrive; a sixth one fails with a message saying so, and Retry TikTok works once you've cleared some.
 - **Videos are served from `/media/<random name>.mp4`** so Instagram can fetch them. The names are unguessable, but anyone holding a link can watch that video.
 
 
@@ -120,9 +151,20 @@ Run locally: `npm run render` (add `DRY_RUN=1` in front to render and check with
 npm run dashboard     # opens it and copies the admin key for the sign-in box
 ```
 
-`https://homie-social.meidan-gilad.workers.dev/dashboard` shows followers (with a 7-day change), total and average reel views, engagement rate (interactions ÷ reach), average watch time, views by reel, a 30-day follower trend, a sortable table of every reel on the account (including ones posted by hand), and the publishing queue.
+`https://homie-social.meidan-gilad.workers.dev/dashboard`, signed in with `ADMIN_TOKEN` (lasts 30 days). Every page has a **24h / 7d / 30d / All** switch, and every number has an ⓘ that explains it in one sentence. A glossary sits at the bottom of each page.
 
-Stats are collected hourly by the cron job, or on demand with **Refresh stats now**. Snapshots are kept for 90 days. Sign-in uses `ADMIN_TOKEN` and lasts 30 days. If Instagram rejects one of the newer metric names, the collector falls back to the core set (views, reach, likes, comments, shares, saves) so the dashboard keeps working.
+| Page | What it answers |
+| --- | --- |
+| **Overview** | How is it going? A plain-language summary (views, best reel, watch time, followers, posting pace), one card per platform, total views over time for both, and the top reels of the period. |
+| **Instagram** / **TikTok** | Which reels beat my usual? Views gained, followers, typical reel, engagement, the latest reels against the typical-reel line, views and followers over time, and a searchable, sortable table with a 48-hour trend per reel. |
+| **Reel page** (click any Instagram reel) | The story of one reel: how its first day compared, reach vs plays, watch time, engagement, rank, views hour by hour, caption. |
+| **System** | Is everything running? Health checks for the scheduler, Instagram stats, the Instagram connection (publishing quota and API budget), TikTok (sign-in, drafts used of 5 per day), Telegram (webhook) and the queue, plus an activity log of approvals, publishes, failures and stats problems. |
+
+**How reels are compared.** Older reels have had more time to collect views, so totals favour them. Each reel is compared by its **first-day views** (views at the last hourly measurement within 24 hours of posting) against your **typical reel**: the median first-day views of your reels from the last 30 days. Reels under a day old show as *new* until their first day ends. The typical reel appears once three reels are a day old.
+
+**Collection.** Hourly, or on demand with **Refresh**. All posts are read (up to 250 Instagram, 200 TikTok). Instagram reels under 2 days old are measured every hour, up to 14 days every 6 hours, older ones daily. That keeps the run well inside Meta's API budget, which the System page shows. Snapshots and the activity log are kept for 90 days. If Instagram rejects a newer metric name, the collector falls back to the core set (views, reach, likes, comments, shares, saves).
+
+**Upgrading an existing database** (once, before deploying this version): `npm run db:migrate:insights`. It adds first-day views, a running total of views and the activity log, and backfills first-day views from the snapshots already collected.
 
 ## Development
 
@@ -135,17 +177,25 @@ npm run logs      # live logs from the deployed Worker
 | --- | --- |
 | `src/pipeline.js` | Reel lifecycle, Telegram commands, token renewal. No platform code. |
 | `src/instagram.js` | Instagram API calls |
+| `src/tiktok.js` | TikTok upload, status, stats calls, sign-in and token renewal |
+| `src/tiktok-stats.js` | Hourly TikTok stats collection, views history and first-day views |
 | `src/telegram.js` | Telegram API calls |
 | `src/store.js` | D1 queries |
 | `src/index.js` | Worker: HTTP routes, media hosting, webhook, cron, dashboard auth |
-| `src/stats.js` | Hourly stats collection and dashboard numbers |
-| `src/dashboard.js` | Dashboard and sign-in pages (server-rendered HTML) |
+| `src/stats.js` | Hourly Instagram stats collection |
+| `src/insights.js` | Typical reel, first-day comparisons, ranges and the plain-language summary |
+| `src/health.js` | System page health checks |
+| `src/dashboard.js` | Dashboard pages (server-rendered HTML, no outside scripts) |
 | `scripts/enqueue.mjs` | Queue a reel from your Mac (also used by the workflow) |
 | `scripts/render-batch.py` | Render, check and enqueue the reels in `content/batches/` |
 | `scripts/notify-failures.mjs` | Telegram alert when the workflow could not send a reel |
 | `.github/workflows/render-reels.yml` | Runs the above on every pushed batch |
 | `schema.sql` | Database tables |
+| `migrations/001-tiktok.sql` | Adds the TikTok columns to a database made before TikTok |
+| `migrations/002-insights.sql` | Dashboard v2: first-day views, total views, activity log |
 
 ## Not verified yet
+
+The TikTok calls follow TikTok's Content Posting API docs (upload mode) but have not run against the real API. The first approved reel after connecting is the test.
 
 The Instagram calls follow Meta's documentation but have not run against the real API; the first real reel is the test. The token kind decides the API: an `EAA...` business (system-user) token goes to `graph.facebook.com` with `IG_USER_ID` (already set to homie.il) and never expires; an `IGAA...` Instagram Login token goes to `graph.instagram.com` and is renewed weekly.

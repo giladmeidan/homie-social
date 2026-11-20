@@ -21,7 +21,29 @@ export class InstagramError extends Error {
   }
 }
 
-async function request(fetchFn, method, url, params) {
+// Meta reports how much of the API budget is used in these response headers (JSON, percentages).
+const USAGE_HEADERS = ['x-business-use-case-usage', 'x-app-usage'];
+
+// Highest percentage found anywhere in a usage header, e.g. {"call_count":12,"total_time":3} -> 12.
+export function peakUsage(headerValue) {
+  if (!headerValue) return null;
+  let peak = null;
+  const walk = (v) => {
+    if (typeof v === 'number') peak = Math.max(peak ?? 0, v);
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') {
+      for (const [k, x] of Object.entries(v)) if (k !== 'type' && k !== 'estimated_time_to_regain_access') walk(x);
+    }
+  };
+  try {
+    walk(JSON.parse(headerValue));
+  } catch {
+    return null;
+  }
+  return peak;
+}
+
+async function request(fetchFn, method, url, params, onUsage) {
   const init = { method };
   if (method === 'GET') {
     url += `?${new URLSearchParams(params)}`;
@@ -29,6 +51,12 @@ async function request(fetchFn, method, url, params) {
     init.body = new URLSearchParams(params);
   }
   const res = await fetchFn(url, init);
+  if (onUsage && res.headers?.get) {
+    for (const h of USAGE_HEADERS) {
+      const pct = peakUsage(res.headers.get(h));
+      if (pct !== null) onUsage(pct);
+    }
+  }
   let data = {};
   try {
     data = await res.json();
@@ -46,8 +74,14 @@ async function request(fetchFn, method, url, params) {
 // userId "me" only works with Instagram Login tokens; business tokens need the numeric IG account id.
 export function createInstagram({ fetchFn, getToken, version = 'v25.0', userId = 'me', host = 'graph.instagram.com' }) {
   const base = `https://${host}/${version}`;
-  const call = async (method, path, params = {}) =>
-    request(fetchFn, method, `${base}/${path}`, { ...params, access_token: await getToken() });
+  // Counts calls and remembers the highest API-usage percentage Meta reported, for the System page.
+  const usage = { calls: 0, peak: null };
+  const call = async (method, path, params = {}) => {
+    usage.calls++;
+    return request(fetchFn, method, `${base}/${path}`, { ...params, access_token: await getToken() }, (pct) => {
+      usage.peak = Math.max(usage.peak ?? 0, pct);
+    });
+  };
 
   return {
     // Step 1: Instagram downloads the video from videoUrl and processes it.
@@ -66,11 +100,16 @@ export function createInstagram({ fetchFn, getToken, version = 'v25.0', userId =
     whoAmI: () => call('GET', userId, { fields: 'id,username' }),
     // ---- stats ----
     account: () => call('GET', userId, { fields: 'username,followers_count,media_count' }),
-    listMedia: (limit = 50) =>
+    // One page of the account's posts, newest first. Pass the returned paging.cursors.after to get the next.
+    listMedia: (limit = 50, after = null) =>
       call('GET', `${userId}/media`, {
         fields: 'id,caption,media_type,media_product_type,permalink,timestamp,thumbnail_url',
         limit: String(limit),
+        ...(after ? { after } : {}),
       }),
+    // How many API posts were published in the last 24 hours, against the account's cap.
+    publishingLimit: () => call('GET', `${userId}/content_publishing_limit`, { fields: 'quota_usage,config' }),
+    usage,
     mediaInsights: (mediaId, metrics) => call('GET', `${mediaId}/insights`, { metric: metrics.join(',') }),
   };
 }

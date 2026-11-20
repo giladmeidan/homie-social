@@ -22,6 +22,17 @@ export function createMemoryStore() {
       Object.assign(r, fields, { status: to });
       return true;
     },
+    async tiktokTransition(id, from, to, fields = {}) {
+      const r = reels.get(id);
+      if (!r || (r.tiktok_status ?? null) !== from) return false;
+      Object.assign(r, fields, { tiktok_status: to });
+      return true;
+    },
+    async listTikTokActive() {
+      return [...reels.values()]
+        .filter((r) => ['queued', 'uploading', 'processing'].includes(r.tiktok_status))
+        .map((r) => ({ ...r }));
+    },
     async listActive() {
       return [...reels.values()].filter((r) => ACTIVE.includes(r.status)).map((r) => ({ ...r }));
     },

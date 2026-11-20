@@ -4,12 +4,22 @@
 // Statuses:
 //   uploading -> pending_approval -> approved -> creating -> processing -> publishing -> published
 //                                 \-> rejected          \-> failed (Retry puts it back to approved)
+//
+// TikTok runs beside Instagram on its own column (tiktok_status), so neither can block the other:
+//   (null) -> queued (on approval) -> uploading -> processing -> in_inbox
+//                                           \-> failed (TikTok Retry puts it back to queued)
+//   off     = this reel was enqueued with --no-tiktok
+//   skipped = TikTok was not connected when the reel was approved
+
+import { chunkRanges } from './tiktok.js';
 
 export const CAPTION_MAX = 2200; // Instagram's caption limit
 const STUCK_MS = 10 * 60 * 1000; // creating/publishing longer than this = interrupted
 const PROCESSING_TIMEOUT_MS = 30 * 60 * 1000;
 const TOKEN_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 const TOKEN_RETRY_MS = 24 * 60 * 60 * 1000;
+const TIKTOK_STUCK_MS = 15 * 60 * 1000;
+const TIKTOK_PROCESSING_TIMEOUT_MS = 30 * 60 * 1000;
 
 const approvalKeyboard = (id) => ({
   inline_keyboard: [
@@ -25,6 +35,10 @@ const retryKeyboard = (id) => ({
   inline_keyboard: [[{ text: '🔁 Retry', callback_data: `retry:${id}` }]],
 });
 
+const tiktokRetryKeyboard = (id) => ({
+  inline_keyboard: [[{ text: '🔁 Retry TikTok', callback_data: `ttretry:${id}` }]],
+});
+
 export function createPipeline({
   store,
   ig,
@@ -33,6 +47,10 @@ export function createPipeline({
   getBaseUrl,
   now = () => new Date(),
   timeZone = 'Asia/Jerusalem',
+  // TikTok is optional: without tt (no TIKTOK_CLIENT_KEY) the pipeline is Instagram-only.
+  tt = null,
+  media = null, // { size(key) -> bytes, read(key, offset, length) -> ArrayBuffer }
+  tiktokConnected = async () => Boolean(tt),
 }) {
   const iso = () => now().toISOString();
   const label = (r) => r.title || `reel ${r.id}`;
@@ -44,6 +62,10 @@ export function createPipeline({
   const update = (id, fields) => store.updateReel(id, { ...fields, updated_at: iso() });
   const transition = (id, from, to, fields = {}) =>
     store.transition(id, from, to, { ...fields, updated_at: iso() });
+
+  // Activity log for the dashboard's System page. Optional (tests may not provide it) and never throws.
+  const log = (level, source, message, reelId = null) =>
+    store.logEvent ? store.logEvent({ at: iso(), level, source, message, reel_id: reelId }).catch(() => {}) : Promise.resolve();
 
   // Telegram being down must never corrupt reel state, so notifications never throw.
   async function say(text, extra = {}) {
@@ -85,6 +107,7 @@ export function createPipeline({
       ? `Scheduled for ${localTime(reel.scheduled_at)}`
       : 'Publishes right after approval';
     const header = `🎬 ${label(reel)}\n${when}`;
+    await log('info', 'publisher', `Sent for approval: ${label(reel)}`, id);
     try {
       await tg.send('sendVideo', { chat_id: chatId, video: videoUrl, caption: header });
     } catch (err) {
@@ -99,6 +122,7 @@ export function createPipeline({
     const moved = await transition(id, from, 'failed', { error: message });
     if (!moved) return;
     const reel = await store.getReel(id);
+    await log('error', 'publisher', `${label(reel)} failed: ${message}`, id);
     await say(`⚠️ ${label(reel)} failed: ${message}`, { reply_markup: retryKeyboard(id) });
   }
 
@@ -145,6 +169,7 @@ export function createPipeline({
           published_at: iso(),
           error: null,
         });
+        await log('good', 'publisher', `Published on Instagram: ${label(reel)}`, reel.id);
         await say(`✅ Published: ${label(reel)}${permalink ? `\n${permalink}` : ''}`);
       } catch (err) {
         await fail(
@@ -183,6 +208,7 @@ export function createPipeline({
         console.error(`tick failed for ${reel.id}:`, err.message);
       }
     }
+    if (tt) await tiktokTick();
   }
 
   async function approve(id) {
@@ -190,11 +216,13 @@ export function createPipeline({
     if (!moved) return 'Already handled';
     const reel = await store.getReel(id);
     await clearButtons(reel);
+    await log('info', 'publisher', `Approved: ${label(reel)}`, id);
+    const tiktokNote = await queueTikTok(reel);
     if (isDue(reel)) {
-      await say(`👍 Approved: ${label(reel)}. Sending to Instagram now.`);
+      await say(`👍 Approved: ${label(reel)}. Sending to Instagram now.${tiktokNote}`);
       await startPublish(id);
     } else {
-      await say(`👍 Approved: ${label(reel)}. It will publish on ${localTime(reel.scheduled_at)}.`);
+      await say(`👍 Approved: ${label(reel)}. It will publish on ${localTime(reel.scheduled_at)}.${tiktokNote}`);
     }
     return 'Approved';
   }
@@ -204,6 +232,7 @@ export function createPipeline({
     if (!moved) return 'Already handled';
     const reel = await store.getReel(id);
     await clearButtons(reel);
+    await log('info', 'publisher', `Rejected: ${label(reel)}`, id);
     await say(`🗑 Rejected: ${label(reel)}. Nothing was posted.`);
     return 'Rejected';
   }
@@ -213,8 +242,128 @@ export function createPipeline({
     if (!moved) return 'Already handled';
     const reel = await store.getReel(id);
     await clearButtons(reel);
+    await log('info', 'publisher', `Retrying: ${label(reel)}`, id);
     if (isDue(reel)) await startPublish(id);
     return 'Retrying';
+  }
+
+  // ---- TikTok (draft to inbox) ----
+
+  const ttUpdate = (id, fields) => store.updateReel(id, { ...fields, tiktok_updated_at: iso() });
+  const ttTransition = (id, from, to, fields = {}) =>
+    store.tiktokTransition(id, from, to, { ...fields, tiktok_updated_at: iso() });
+
+  // Marks an approved reel for TikTok. Returns a short note for the approval message.
+  async function queueTikTok(reel) {
+    if (!tt || reel.tiktok_status === 'off') return '';
+    if (!(await tiktokConnected())) {
+      await ttUpdate(reel.id, { tiktok_status: 'skipped', tiktok_error: 'TikTok was not connected' });
+      return '\nTikTok skipped: not connected yet (open /dashboard/tiktok/connect).';
+    }
+    await ttUpdate(reel.id, { tiktok_status: 'queued', tiktok_error: null, tiktok_publish_id: null });
+    return isDue(reel) ? '\nThe TikTok draft follows within a minute.' : '\nThe TikTok draft goes out at the same time.';
+  }
+
+  async function failTikTok(id, from, message) {
+    const moved = await ttTransition(id, from, 'failed', { tiktok_error: message });
+    if (!moved) return;
+    const reel = await store.getReel(id);
+    await log('error', 'tiktok', `TikTok draft for ${label(reel)} failed: ${message}`, id);
+    await say(`⚠️ TikTok draft for ${label(reel)} failed: ${message}`, { reply_markup: tiktokRetryKeyboard(id) });
+  }
+
+  // queued -> uploading -> processing. The conditional transition is the lock, as for Instagram.
+  async function startTikTok(id) {
+    const claimed = await ttTransition(id, 'queued', 'uploading', { tiktok_error: null });
+    if (!claimed) return false;
+    const reel = await store.getReel(id);
+    try {
+      const size = await media.size(reel.media_key);
+      if (!size) throw new Error('the video file is missing from storage');
+      const init = await tt.initInboxUpload(size);
+      if (!init.upload_url || !init.publish_id) throw new Error('TikTok did not return an upload address');
+      for (const { start, end } of chunkRanges(size)) {
+        const bytes = await media.read(reel.media_key, start, end - start + 1);
+        await tt.uploadChunk(init.upload_url, bytes, start, end, size);
+      }
+      await ttTransition(id, 'uploading', 'processing', { tiktok_publish_id: init.publish_id });
+      return true;
+    } catch (err) {
+      await failTikTok(id, 'uploading', err.message);
+      return false;
+    }
+  }
+
+  async function checkTikTok(reel) {
+    let s;
+    try {
+      s = await tt.status(reel.tiktok_publish_id);
+    } catch (err) {
+      console.error(`tiktok status check failed for ${reel.id}:`, err.message);
+      s = { status: 'PROCESSING_UPLOAD' }; // transient; the timeout below still applies
+    }
+    if (s.status === 'SEND_TO_USER_INBOX' || s.status === 'PUBLISH_COMPLETE') {
+      const claimed = await ttTransition(reel.id, 'processing', 'in_inbox', { tiktok_error: null });
+      if (!claimed) return;
+      await log('good', 'tiktok', `In TikTok drafts: ${label(reel)}`, reel.id);
+      await say(
+        `📥 ${label(reel)} is in your TikTok inbox.\nOpen TikTok, tap the notification, paste the caption below (add a trending sound if you like) and post.`,
+      );
+      await say(reel.caption); // its own message so it is one long-press to copy
+      return;
+    }
+    if (s.status === 'FAILED') {
+      await failTikTok(reel.id, 'processing', `TikTok could not process the video (${s.fail_reason || 'no reason given'})`);
+      return;
+    }
+    if (now() - new Date(reel.tiktok_updated_at) > TIKTOK_PROCESSING_TIMEOUT_MS) {
+      await failTikTok(reel.id, 'processing', 'TikTok was still processing after 30 minutes. Check your TikTok inbox before retrying');
+    }
+  }
+
+  async function tiktokTick() {
+    const active = await store.listTikTokActive();
+    for (const reel of active) {
+      try {
+        if (reel.tiktok_status === 'queued' && isDue(reel)) {
+          await startTikTok(reel.id);
+        } else if (reel.tiktok_status === 'processing') {
+          await checkTikTok(reel);
+        } else if (
+          reel.tiktok_status === 'uploading' &&
+          now() - new Date(reel.tiktok_updated_at) > TIKTOK_STUCK_MS
+        ) {
+          await failTikTok(reel.id, 'uploading', 'the upload was interrupted. Check your TikTok inbox before retrying, it may have gone through');
+        }
+      } catch (err) {
+        console.error(`tiktok tick failed for ${reel.id}:`, err.message);
+      }
+    }
+  }
+
+  // Sends an already-published reel to TikTok drafts (dashboard button), without touching Instagram.
+  const TIKTOK_RESENDABLE = [null, 'off', 'skipped', 'failed'];
+  async function sendToTikTok(id) {
+    if (!tt) return 'TikTok is not set up';
+    if (!(await tiktokConnected())) return 'TikTok is not connected';
+    const reel = await store.getReel(id);
+    if (!reel) return 'No such reel';
+    if (reel.status !== 'published') return 'Only published reels can be sent this way';
+    const from = reel.tiktok_status ?? null;
+    if (!TIKTOK_RESENDABLE.includes(from)) return `Already on its way to TikTok (${from})`;
+    const moved = await ttTransition(id, from, 'queued', { tiktok_error: null, tiktok_publish_id: null });
+    if (!moved) return 'Already handled';
+    await say(`📤 Sending ${label(reel)} to your TikTok drafts.`);
+    return 'Queued for TikTok';
+  }
+
+  async function retryTikTok(id) {
+    if (!tt) return 'TikTok is not set up';
+    const moved = await ttTransition(id, 'failed', 'queued', { tiktok_publish_id: null });
+    if (!moved) return 'Already handled';
+    const reel = await store.getReel(id);
+    if (isDue(reel)) await startTikTok(id);
+    return 'Retrying TikTok';
   }
 
   async function askForCaption(id) {
@@ -247,7 +396,7 @@ export function createPipeline({
     if (cq) {
       if (!chatId || String(cq.message?.chat?.id) !== String(chatId)) return;
       const [action, id] = String(cq.data || '').split(':');
-      const actions = { approve, reject, retry, edit: askForCaption };
+      const actions = { approve, reject, retry, edit: askForCaption, ttretry: retryTikTok };
       let answer = 'Unknown action';
       if (actions[action] && id) answer = await actions[action](id);
       try {
@@ -280,7 +429,9 @@ export function createPipeline({
     }
     if (text === '/queue') {
       const reels = await store.listReels(15);
-      const lines = reels.map((r) => `${r.status} · ${label(r)}`);
+      const lines = reels.map(
+        (r) => `${r.status}${r.tiktok_status ? ` · tiktok ${r.tiktok_status}` : ''} · ${label(r)}`,
+      );
       await say(lines.length ? lines.join('\n') : 'The queue is empty.');
       return;
     }
@@ -288,7 +439,9 @@ export function createPipeline({
     if (awaiting && !text.startsWith('/')) await replaceCaption(awaiting, msg.text);
   }
 
-  return { submitForApproval, startPublish, tick, approve, reject, retry, handleTelegramUpdate };
+  return {
+    submitForApproval, startPublish, tick, approve, reject, retry, handleTelegramUpdate, startTikTok, retryTikTok, sendToTikTok,
+  };
 }
 
 // ---- Instagram access token ----

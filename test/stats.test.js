@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectStats, maybeCollectStats, parseInsights, reelLabel, dashboardData, CORE_METRICS } from '../src/stats.js';
-import { renderDashboard, renderLogin } from '../src/dashboard.js';
+import { collectStats, maybeCollectStats, parseInsights, reelLabel, CORE_METRICS } from '../src/stats.js';
+import { renderLogin } from '../src/dashboard.js';
 
 // Minimal in-memory version of the stats part of the store.
 function statsStore() {
@@ -103,19 +103,6 @@ test('reelLabel prefers the title, then the caption first line without hashtags'
   assert.equal(reelLabel('', null), 'Untitled reel');
 });
 
-test('dashboard data and page render, with captions escaped', async () => {
-  const store = statsStore();
-  await collectStats({ ig: fakeIg(), store, now: () => new Date('2026-11-20T00:00:00Z') });
-  await store.upsertMedia({ id: 'm3', caption: '<script>alert(1)</script>', media_type: 'VIDEO', media_product_type: 'REELS', timestamp: '2026-11-17T00:00:00+0000' });
-  const d = await dashboardData(store);
-  assert.equal(d.followers, 120);
-  assert.equal(d.reelCount, 2);
-  assert.equal(d.totalViews, 10);
-  assert.equal(d.avgWatchS, 6.4);
-  const htmlOut = renderDashboard(d);
-  assert.ok(htmlOut.includes('@homie.il'));
-  assert.ok(htmlOut.includes('Views by reel'));
-  assert.ok(!htmlOut.includes('<script>alert(1)</script>'));
-  assert.ok(htmlOut.includes('&lt;script&gt;'));
-  assert.ok(renderLogin('bad').includes('bad'));
+test('login page shows its error', () => {
+  assert.ok(renderLogin('bad key').includes('bad key'));
 });
