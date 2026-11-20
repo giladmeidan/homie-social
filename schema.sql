@@ -13,10 +13,15 @@ CREATE TABLE IF NOT EXISTS reels (
   ig_media_id   TEXT,
   permalink     TEXT,
   error         TEXT,
-  tg_message_id TEXT
+  tg_message_id TEXT,
+  tiktok_status     TEXT,
+  tiktok_publish_id TEXT,
+  tiktok_error      TEXT,
+  tiktok_updated_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS reels_status ON reels (status);
+CREATE INDEX IF NOT EXISTS reels_tiktok_status ON reels (tiktok_status);
 
 CREATE TABLE IF NOT EXISTS kv (
   key   TEXT PRIMARY KEY,
@@ -31,7 +36,9 @@ CREATE TABLE IF NOT EXISTS ig_media (
   product_type  TEXT,
   permalink     TEXT,
   timestamp     TEXT,
-  thumbnail_url TEXT
+  thumbnail_url TEXT,
+  day1_views    INTEGER,  -- views at the last hourly snapshot within 24h of posting
+  day1_at       TEXT
 );
 
 -- One row per reel per hourly collection; kept for 90 days.
@@ -46,6 +53,18 @@ CREATE TABLE IF NOT EXISTS account_stats (
   captured_at TEXT NOT NULL,
   username    TEXT,
   followers   INTEGER,
-  media_count INTEGER
+  media_count INTEGER,
+  total_views INTEGER     -- latest known views summed over every reel, at this collection
 );
 CREATE INDEX IF NOT EXISTS account_stats_at ON account_stats (captured_at);
+
+-- Activity log shown on the System page; kept for 90 days.
+CREATE TABLE IF NOT EXISTS events (
+  id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  at      TEXT NOT NULL,
+  level   TEXT NOT NULL,
+  source  TEXT NOT NULL,
+  message TEXT NOT NULL,
+  reel_id TEXT
+);
+CREATE INDEX IF NOT EXISTS events_at ON events (at);

@@ -4,6 +4,7 @@
 //   npm run enqueue -- path/to/reel.mp4 --reel 44
 //   npm run enqueue -- path/to/reel.mp4 --caption-file caption.txt --title "Turtle ep 3"
 //   npm run enqueue -- path/to/reel.mp4 --reel 44 --at "2026-11-21 19:00"
+//   npm run enqueue -- path/to/reel.mp4 --reel 44 --no-tiktok     (Instagram only)
 //
 // --reel N reads the caption from captions-log.md (CAPTIONS_LOG in .env).
 // --at is in this computer's local time. Without it the reel publishes right after approval.
@@ -15,7 +16,8 @@ function parseArgs(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a.startsWith('--')) out[a.slice(2)] = argv[++i];
+    if (a === '--no-tiktok') out['no-tiktok'] = true;
+    else if (a.startsWith('--')) out[a.slice(2)] = argv[++i];
     else out._.push(a);
   }
   return out;
@@ -60,7 +62,12 @@ const headers = { authorization: `Bearer ${env.ADMIN_TOKEN}` };
 const created = await fetch(`${base}/api/reels`, {
   method: 'POST',
   headers: { ...headers, 'content-type': 'application/json' },
-  body: JSON.stringify({ caption: caption.trim(), title, scheduled_at: scheduledAt }),
+  body: JSON.stringify({
+    caption: caption.trim(),
+    title,
+    scheduled_at: scheduledAt,
+    ...(args['no-tiktok'] ? { tiktok: false } : {}),
+  }),
 });
 const createdBody = await created.json().catch(() => ({}));
 if (!created.ok) die(`could not create the reel: ${createdBody.error || created.status}`);

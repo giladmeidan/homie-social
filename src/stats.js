@@ -28,36 +28,80 @@ async function reelInsights(ig, mediaId) {
   }
 }
 
+const HOUR = 60 * 60 * 1000;
+const MAX_MEDIA = 250; // newest posts read each run (5 pages of 50)
+const PAGE = 50;
+
+// How often a reel is re-measured, by age. New reels change fast; old ones barely move,
+// and skipping them keeps the hourly run well inside Instagram's API budget.
+export function refreshEveryMs(ageMs) {
+  if (ageMs < 48 * HOUR) return 0; // every run
+  if (ageMs < 14 * 24 * HOUR) return 6 * HOUR;
+  return 24 * HOUR;
+}
+
+const ageOf = (m, nowMs) => (m.timestamp ? nowMs - new Date(m.timestamp).getTime() : Infinity);
+
+async function listAllMedia(ig) {
+  const media = [];
+  let after = null;
+  while (media.length < MAX_MEDIA) {
+    const res = await ig.listMedia(PAGE, after);
+    media.push(...(res.data || []));
+    after = res.paging?.cursors?.after;
+    if (!res.paging?.next || !after) break;
+  }
+  return media.slice(0, MAX_MEDIA);
+}
+
 export async function collectStats({ ig, store, now = () => new Date() }) {
   const at = now().toISOString();
+  const nowMs = now().getTime();
   const account = await ig.account();
-  await store.addAccountStats({
-    captured_at: at,
-    username: account.username || null,
-    followers: account.followers_count ?? null,
-    media_count: account.media_count ?? null,
-  });
-  const media = (await ig.listMedia(50)).data || [];
+  const media = await listAllMedia(ig);
+  const lastSeen = store.lastSnapshotTimes ? await store.lastSnapshotTimes() : {};
   let reels = 0;
+  let skipped = 0;
   let failed = 0;
   for (const m of media) {
     await store.upsertMedia(m);
     if (!isReel(m)) continue;
+    const age = ageOf(m, nowMs);
+    const last = lastSeen[m.id];
+    if (last && nowMs - new Date(last).getTime() < refreshEveryMs(age) - 5 * 60 * 1000) {
+      skipped++;
+      continue;
+    }
     try {
-      await store.addMediaStats(m.id, at, await reelInsights(ig, m.id));
+      const metrics = await reelInsights(ig, m.id);
+      await store.addMediaStats(m.id, at, metrics);
+      if (age <= 24 * HOUR && typeof metrics.views === 'number' && store.setDay1) {
+        await store.setDay1(m.id, metrics.views, at);
+      }
       reels++;
     } catch (err) {
       failed++;
       console.error(`insights failed for ${m.id}:`, err.message);
     }
   }
-  await store.pruneStats(new Date(now().getTime() - 90 * 24 * 60 * 60 * 1000).toISOString());
-  const summary = { at, media: media.length, reels, failed };
+  const totalViews = store.sumLatestViews ? await store.sumLatestViews() : null;
+  await store.addAccountStats({
+    captured_at: at,
+    username: account.username || null,
+    followers: account.followers_count ?? null,
+    media_count: account.media_count ?? null,
+    total_views: totalViews,
+  });
+  await store.pruneStats(new Date(nowMs - 90 * 24 * HOUR).toISOString());
+  const summary = { at, media: media.length, reels, skipped, failed, calls: ig.usage?.calls ?? null, usage_peak: ig.usage?.peak ?? null };
   await store.kvSet('stats_last_run', JSON.stringify(summary));
   return summary;
 }
 
+const logEvent = (store, e) => (store.logEvent ? store.logEvent(e).catch(() => {}) : Promise.resolve());
+
 // Runs from the every-minute cron; does real work at most once an hour.
+// Logs to the activity log only when something changes (a new error, or recovery), not every hour.
 export async function maybeCollectStats({ ig, store, now = () => new Date() }) {
   let last = null;
   try {
@@ -67,12 +111,25 @@ export async function maybeCollectStats({ ig, store, now = () => new Date() }) {
   }
   if (last && now().getTime() - last < COLLECT_EVERY_MS) return 'waiting';
   await store.kvSet('stats_last_attempt', JSON.stringify(now().getTime()));
+  const previousError = (await store.kvGet('stats_last_error')) || '';
   try {
-    await collectStats({ ig, store, now });
+    const summary = await collectStats({ ig, store, now });
     await store.kvSet('stats_last_error', '');
+    if (previousError) {
+      await logEvent(store, { at: now().toISOString(), level: 'good', source: 'stats', message: 'Instagram stats collection is working again' });
+    }
+    if (summary.failed) {
+      await logEvent(store, {
+        at: now().toISOString(), level: 'warning', source: 'stats',
+        message: `Instagram stats: ${summary.failed} reel${summary.failed > 1 ? 's' : ''} could not be measured this hour`,
+      });
+    }
     return 'collected';
   } catch (err) {
     await store.kvSet('stats_last_error', err.message);
+    if (err.message !== previousError) {
+      await logEvent(store, { at: now().toISOString(), level: 'error', source: 'stats', message: `Instagram stats collection failed: ${err.message}` });
+    }
     return 'error';
   }
 }
@@ -86,58 +143,7 @@ export function reelLabel(caption, title) {
   return clean.length > 60 ? `${clean.slice(0, 57)}…` : clean;
 }
 
-export async function dashboardData(store, now = () => new Date()) {
-  const [reels, account, followerSeries, queue, lastRun, lastError] = await Promise.all([
-    store.latestReelStats(),
-    store.latestAccountStats(),
-    store.dailyFollowers(30),
-    store.listReels(10),
-    store.kvGet('stats_last_run'),
-    store.kvGet('stats_last_error'),
-  ]);
-  const rows = reels.map((r) => {
-    const m = r.metrics ? JSON.parse(r.metrics) : {};
-    return {
-      id: r.id,
-      label: reelLabel(r.caption, r.title),
-      caption: r.caption || '',
-      permalink: r.permalink,
-      published: r.timestamp,
-      views: m.views ?? null,
-      reach: m.reach ?? null,
-      likes: m.likes ?? null,
-      comments: m.comments ?? null,
-      shares: m.shares ?? null,
-      saved: m.saved ?? null,
-      interactions: m.total_interactions ?? sumKnown([m.likes, m.comments, m.shares, m.saved]),
-      avg_watch_s: typeof m.ig_reels_avg_watch_time === 'number' ? m.ig_reels_avg_watch_time / 1000 : null,
-    };
-  });
-  const withViews = rows.filter((r) => typeof r.views === 'number');
-  const totalViews = withViews.reduce((s, r) => s + r.views, 0);
-  const totalReach = rows.reduce((s, r) => s + (r.reach || 0), 0);
-  const totalInteractions = rows.reduce((s, r) => s + (r.interactions || 0), 0);
-  const watch = rows.filter((r) => typeof r.avg_watch_s === 'number');
-  const weekAgo = followerSeries.find((p) => new Date(p.day) <= new Date(now().getTime() - 7 * 864e5));
-  return {
-    username: account?.username || null,
-    followers: account?.followers ?? null,
-    followersWeekDelta:
-      account?.followers != null && weekAgo?.followers != null ? account.followers - weekAgo.followers : null,
-    reelCount: rows.length,
-    totalViews,
-    avgViews: withViews.length ? Math.round(totalViews / withViews.length) : null,
-    engagementRate: totalReach ? totalInteractions / totalReach : null,
-    avgWatchS: watch.length ? watch.reduce((s, r) => s + r.avg_watch_s, 0) / watch.length : null,
-    rows,
-    followerSeries,
-    queue,
-    lastRun: lastRun ? JSON.parse(lastRun) : null,
-    lastError: lastError || null,
-  };
-}
-
-function sumKnown(values) {
+export function sumKnown(values) {
   const nums = values.filter((v) => typeof v === 'number');
   return nums.length ? nums.reduce((a, b) => a + b, 0) : null;
 }

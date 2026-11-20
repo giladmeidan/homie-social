@@ -3,17 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Publishes homie reels to Instagram after a Telegram approval",
+  "description": "Publishes homie reels to Instagram, and drafts them to TikTok, after a Telegram approval",
   "scripts": {
     "test": "node --test",
     "deploy": "wrangler deploy",
     "logs": "wrangler tail",
     "db:init": "wrangler d1 execute homie-social --remote --file=schema.sql",
+    "db:migrate:tiktok": "wrangler d1 execute homie-social --remote --file=migrations/001-tiktok.sql",
     "enqueue": "node scripts/enqueue.mjs",
     "telegram:webhook": "node scripts/telegram-webhook.mjs",
     "health": "node scripts/health.mjs",
     "dashboard": "node scripts/dashboard.mjs",
-    "render": "python3 scripts/render-batch.py"
+    "render": "python3 scripts/render-batch.py",
+    "db:migrate:insights": "wrangler d1 execute homie-social --remote --file=migrations/002-insights.sql"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
