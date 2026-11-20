@@ -14,8 +14,8 @@ const AEND=15.6;
 bg('#fff',0,DUR);
 
 /* ---------- hook: a question from a year ahead ---------- */
-caption(170,['בעוד שנה,'],0.05,3.1,{fs:118,c:INK,fo:.15,sfx:'pop'});
-caption(305,['מישהו ישאל:'],0.3,3.1,{fs:118,c:BLUE,fo:.15});
+caption(170,['בעוד שנה,'],0.05,3.1,{say:true,fs:118,c:INK,fo:.15,sfx:'pop'});
+caption(305,['מישהו ישאל:'],0.3,3.1,{say:true,fs:118,c:BLUE,fo:.15});
 const hookCard=$(`left:110px;top:560px;width:860px;height:640px;border-radius:44px;background:#fff;border:4px solid ${LINEC};overflow:hidden`,`
  <div style="position:absolute;left:30px;top:30px">${wallSVG(800)}</div>
  <div class="hi" style="position:absolute;left:290px;top:210px;width:200px;height:140px;border-radius:50%;border:7px solid ${BLUE};opacity:0"></div>`);
@@ -39,7 +39,7 @@ at(pills,S0,AEND,{anim:'up',dy:30,fo:.2,up:(l,t)=>{[...pills.querySelectorAll('.
   p.style.borderColor=done?BLUE:(cur?INK:LINEC);p.style.color=done?BL2:(cur?INK:GREY);p.style.background=done?SOFT:'#fff';p.querySelector('.ic').style.display=done?'block':'none'})}});
 DONE.forEach((d,i)=>ev(d,'ding',1+i*.12));
 
-const stepHead=(n,txt,a,b)=>{caption(150,[`<span style="color:${BLUE}">${n}</span>`],a,b,{fs:72,c:BLUE,fo:.15,sfx:'pop'});caption(250,[txt],a+.12,b,{fs:96,c:INK,fo:.15,anim:'up',dy:26})};
+const stepHead=(n,txt,a,b)=>{caption(150,[`<span style="color:${BLUE}">${n}</span>`],a,b,{fs:72,c:BLUE,fo:.15,sfx:'pop'});caption(250,[txt],a+.12,b,{say:true,fs:96,c:INK,fo:.15,anim:'up',dy:26})};
 const flash=(t)=>{const f=$(`left:0;top:0;width:1080px;height:1920px;background:#fff`);f.style.zIndex=40;at(f,t,t+.35,{anim:'none',fo:.3});ev(t,'pin',1);ev(t+.02,'swish')};
 const vf=(css)=>{const c=(r)=>`<div style="position:absolute;width:70px;height:70px;${r}"></div>`;const s=`border-color:${BLUE};border-style:solid;border-width:0`;
   return $(css,c(`right:0;top:0;${s};border-top-width:9px;border-right-width:9px;border-top-right-radius:18px`)+c(`left:0;top:0;${s};border-top-width:9px;border-left-width:9px;border-top-left-radius:18px`)+c(`right:0;bottom:0;${s};border-bottom-width:9px;border-right-width:9px;border-bottom-right-radius:18px`)+c(`left:0;bottom:0;${s};border-bottom-width:9px;border-left-width:9px;border-bottom-left-radius:18px`))};
@@ -97,8 +97,8 @@ KT.forEach(k=>{ev(k-.3,'swish');ev(k,'pin',1)});
 caption(1400,['כל מפתח, בדלת שלו. לפני שהולכים.'],S2+1.0,S3,{fs:54,c:MUTED,fo:.15,anim:'up',dy:20});
 
 /* ---------- and send it all in one message ---------- */
-caption(170,['ושולחים הכול'],S3,AEND,{fs:96,c:INK,fo:.15,sfx:'whoosh'});
-caption(290,['בהודעה אחת.'],S3+.2,AEND,{fs:96,c:BLUE,fo:.15});
+caption(170,['ושולחים הכול'],S3,AEND,{say:true,fs:96,c:INK,fo:.15,sfx:'whoosh'});
+caption(290,['בהודעה אחת.'],S3+.2,AEND,{say:true,fs:96,c:BLUE,fo:.15});
 const thumb=(ic)=>`<div style="width:190px;height:150px;border-radius:18px;background:${WALL};border:3px solid ${LINEC};display:flex;align-items:center;justify-content:center;overflow:hidden">${ic}</div>`;
 const msg=$(`left:150px;top:560px;width:780px;border-radius:44px 44px 12px 44px;background:${SOFT};border:4px solid ${PALE};padding:34px 34px 26px`,`
  <div style="display:flex;gap:18px;justify-content:center;direction:rtl">${thumb(wallSVG(186))}${thumb(`<div style="display:flex;gap:6px;direction:ltr">${DIG.split('').map(d=>`<div style="width:26px;height:44px;border-radius:5px;background:${INK};color:#fff;font:700 28px/44px R;text-align:center">${d}</div>`).join('')}</div>`)}${thumb(`<div style="transform:scale(.38);transform-origin:50% 50%">${keySVG}</div>`)}</div>
@@ -111,13 +111,13 @@ at($('left:0;top:1845px;width:1080px;text-align:center;font:500 34px/1.2 R;color
 
 /* ---------- payoff: a year later ---------- */
 const P0=AEND,P1=19.4;
-caption(170,['בעוד שנה.'],P0+.05,P1,{fs:104,c:INK,fo:.15,sfx:'pop'});
+caption(170,['בעוד שנה.'],P0+.05,P1,{say:true,fs:104,c:INK,fo:.15,sfx:'pop'});
 const qa=$(`left:0;top:420px;width:1080px;display:flex;justify-content:flex-end;padding:0 90px`,`<div class="w" style="direction:rtl;background:#fff;border:5px solid ${INK};border-radius:50px;padding:24px 44px;font:500 56px/1.15 R;color:${INK}">״השריטה הזאת?״</div>`);
 at(qa,P0+.3,P1,{dy:30,s0:.6,fo:.2,sfx:'msg'});
 const qb=$(`left:0;top:600px;width:1080px;display:flex;justify-content:flex-start;padding:0 90px`,`<div style="direction:rtl;background:${BLUE};border-radius:50px;padding:26px 30px 26px 44px;display:flex;align-items:center;gap:24px">
  <div class="w" style="font:700 56px/1.15 R;color:#fff">״הייתה. הנה התמונה.״</div>
  <div style="width:150px;height:96px;border-radius:14px;background:#fff;overflow:hidden">${wallSVG(160)}</div></div>`);
-at(qb,P0+1.1,P1,{dy:30,s0:.6,fo:.2,sfx:'msg'});
+at(qb,P0+1.1,P1,{say:'הייתה. הנה התמונה.',dy:30,s0:.6,fo:.2,sfx:'msg'});
 ev(P0+1.4,'ding',1.2);
 caption(1000,['מה שמצלמים בכניסה,'],P0+1.9,P1,{fs:84,c:INK,fo:.15,anim:'up',dy:26,sfx:'whoosh'});
 caption(1120,['לא מתווכחים עליו'],P0+2.15,P1,{fs:84,c:BLUE,fo:.15,anim:'up',dy:26});
@@ -127,7 +127,7 @@ caption(1235,['ביציאה.'],P0+2.35,P1,{fs:84,c:BLUE,fo:.15,anim:'up',dy:26})
 const E0=21.0;
 wordmark(P1,DUR);
 const fin=$('left:0;top:380px;width:1080px;height:900px;',`${hl(250,'דירה מאנשים פרטיים.',INK,100)}${hl(380,'ותמונות מהיום הראשון.',BLUE,92)}${sub(560,'דירות וחדרים, בלי מתווכים.')}`);
-at(fin,P1+.05,E0,{dy:90,s0:.92,dur:.4,sfx:'pop2'});
+at(fin,P1+.05,E0,{say:'דירה מאנשים פרטיים.',dy:90,s0:.92,dur:.4,sfx:'pop2'});
 ev(P1+.5,'ding',1.2);
 endCard(E0,DUR,'יום הכניסה, בתמונות.');
 
@@ -135,13 +135,6 @@ function render(t){runItems(t);turtleWhite(t,P1+.05,[E0],E0+.25)}
 window.AUDIO={dur:DUR,seed:9001,sections:[[0,3.1,'MIN',.13,0,0],[3.1,AEND,'FC',.15,1,0],[AEND,DUR,'POP',.18,1,1]],ticks:[4.6,13.4]};
 
 /* ---------- ElevenLabs voiceover (voice.py) ---------- */
-window.VOICE={duck:0.7,lines:[
- [0.3,'בעוד שנה ישאלו: השריטה הזאת?'],
- [3.2,'התשובה: ביום הכניסה. אחת, מצלמים כל חדר.'],
- [7.8,'שתיים: מצלמים את המונים.'],
- [10.7,'שלוש: בודקים כל מפתח.'],
- [13.45,'ושולחים הכול בהודעה אחת.'],
- [15.75,'בעוד שנה? הייתה. הנה התמונה.'],
- [19.5,'הומי. דירות וחדרים, בלי מתווכים.'],
-]};
+window.STRETCH=1.15;        // same reel, 15% slower, so the voice has room
+window.VOICE={duck:0.7};   // reads the items marked say:true / say:'...'
 window.render=render;window.EVENTS=EVENTS;window.SCENES=SCENES;window.DUR=DUR;render(0);

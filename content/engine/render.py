@@ -14,22 +14,32 @@ with sync_playwright() as p:
     for f in ["600 100px F","500 50px R","700 50px R"]:
         pg.evaluate(f"document.fonts.load('{f}','שלום homie ₪0 92%')")
     pg.wait_for_timeout(800)
+    # window.STRETCH (e.g. 1.12) plays the same reel slower: every time (frames, scenes, sound events,
+    # music sections, voice lines) is scaled by it. 1 = as written.
+    K=float(pg.evaluate("window.STRETCH||1"))
     if args and args[0]=='--still':
         for t in args[1:]:
-            pg.evaluate(f"render({float(t)})"); pg.screenshot(path=f'stills/{reel}_{t}.jpg',type='jpeg',quality=85)
+            pg.evaluate(f"render({float(t)/K})"); pg.screenshot(path=f'stills/{reel}_{t}.jpg',type='jpeg',quality=85)
         b.close(); sys.exit()
-    json.dump(pg.evaluate("window.EVENTS"),open(f'{reel}_events.json','w'))
+    json.dump([dict(e,t=e['t']*K) for e in pg.evaluate("window.EVENTS")],open(f'{reel}_events.json','w'))
     _cfg=pg.evaluate("window.AUDIO||null")
-    if _cfg is not None: json.dump(_cfg,open(f'{reel}_cfg.json','w'))
+    if _cfg is not None:
+        _cfg['dur']=round(_cfg['dur']*K,3)
+        _cfg['sections']=[[x[0]*K,x[1]*K]+list(x[2:]) for x in _cfg['sections']]
+        if _cfg.get('ticks'): _cfg['ticks']=[x*K for x in _cfg['ticks']]
+        json.dump(_cfg,open(f'{reel}_cfg.json','w'))
     _voice=pg.evaluate("window.VOICE||null")   # optional ElevenLabs voiceover, used by voice.py
-    if _voice is not None: json.dump(_voice,open(f'{reel}_voice.json','w'),ensure_ascii=False)
+    if _voice is not None:
+        _voice['say']=[[a*K,b*K,x] for a,b,x in pg.evaluate("window.SAY||[]")]   # [start,end,text] of every item marked say
+        if _voice.get('lines'): _voice['lines']=[[t*K,x] for t,x in _voice['lines']]
+        json.dump(_voice,open(f'{reel}_voice.json','w'),ensure_ascii=False)
     for name,t0,t1 in pg.evaluate("window.SCENES"):
         if args and name not in args: continue
-        n0,n1=round(t0*FPS),round(t1*FPS)
+        n0,n1=round(t0*K*FPS),round(t1*K*FPS)
         tmp=f'scenes/{reel}_{name}.part.mp4'
         ff=subprocess.Popen(['ffmpeg','-y','-loglevel','error','-f','image2pipe','-framerate',str(FPS),'-c:v','mjpeg','-i','-','-c:v','libx264','-crf','18','-preset','veryfast','-pix_fmt','yuv420p','-r',str(FPS),tmp],stdin=subprocess.PIPE)
         for n in range(n0,n1):
-            pg.evaluate(f"render({n/FPS})")
+            pg.evaluate(f"render({n/FPS/K})")
             ff.stdin.write(pg.screenshot(type='jpeg',quality=92))
         ff.stdin.close()
         if ff.wait()==0: os.rename(tmp,f'scenes/{reel}_{name}.mp4'); print('done',reel,name,n1-n0,flush=True)

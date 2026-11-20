@@ -13,7 +13,12 @@ const EVENTS=[];const ev=(t,k,v=1)=>EVENTS.push({t,k,v});
 
 /* ---------- timeline items ---------- */
 const ITEMS=[];
-function at(el,a,b,o={}){const it=Object.assign({anim:'pop',dur:.32,dy:40,s0:.7,fo:.15},o,{el,a,b});ITEMS.push(it);if(o.sfx)ev(a,o.sfx,o.v||1);el.style.display='none';return el}
+/* voiceover: any item with o.say is read aloud by voice.py when the episode sets window.VOICE.
+   say:true reads the element's own text; say:'...' reads that text (e.g. a number spelled out). */
+const SAY=[];window.SAY=SAY;const _txt=(h)=>String(h).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+function at(el,a,b,o={}){const it=Object.assign({anim:'pop',dur:.32,dy:40,s0:.7,fo:.15},o,{el,a,b});ITEMS.push(it);if(o.sfx)ev(a,o.sfx,o.v||1);
+  if(o.say){const txt=o.say===true?_txt(el.innerHTML):_txt(o.say);if(txt)SAY.push([a,b,txt])}
+  el.style.display='none';return el}
 function runItems(t){for(const it of ITEMS){const on=t>=it.a&&t<it.b;show(it.el,on);if(!on)continue;const l=t-it.a;const p=seg(l,0,it.dur);
   const e=it.anim==='fade'?outCubic(p):outBack(p);const f=it.fo>0?1-seg(t,it.b-it.fo,it.fo):1;let tr='';
   if(it.anim==='pop')tr=`translateY(${(1-e)*it.dy}px) scale(${it.s0+(1-it.s0)*e})`;

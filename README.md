@@ -135,8 +135,9 @@ Run locally: `npm run render` (add `DRY_RUN=1` in front to render and check with
 
 ## Voiceover (ElevenLabs, optional)
 
-An episode gets a Hebrew voiceover by defining `window.VOICE` (format at the top of
-`content/engine/voice.py`): a list of `[time, line]`. On render, `voice.py` makes one clip per
+An episode gets a Hebrew voiceover by setting `window.VOICE={}` and marking the main titles to read with
+`say:true` (format at the top of `content/engine/voice.py`). The voice reads exactly those words, when they
+appear; everything else on screen stays unread. `python3 voice.py rNN --estimate` checks the fit for free. On render, `voice.py` makes one clip per
 line, places it at its time (speeding it up by at most x1.25 if it runs into the next line, else
 the reel fails with the line to shorten), ducks the music under it and sets loudness to -18.5 dB.
 Clips are cached in the Actions cache, so a re-render costs no credits.
@@ -147,6 +148,8 @@ Clips are cached in the Actions cache, so a re-render costs no credits.
   plain preview (no Approve button) and never enter the posting queue. Set the repo variable
   `ELEVENLABS_LICENSED=1` only after moving to a paid plan; from then on voiced reels go to approval like any other.
 - Actions > Render reels > Run workflow > "voice_check" prints the plan, characters left and which models list Hebrew.
+- "voice_audition": `mine` (your My Voices) or voice ids, comma separated. Sends the same line in each voice to Telegram.
+- `window.STRETCH=1.12` plays any reel 12% slower (all times scaled in `render.py`).
 - Test reel: 9001 (`content/batches/test-voice-2026-11-20.json`), reel H14 with a voiceover.
 
 ## How it behaves

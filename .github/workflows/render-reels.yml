@@ -23,6 +23,10 @@ on:
         description: 'Only check the ElevenLabs key: credits left and which models speak Hebrew'
         type: boolean
         default: false
+      voice_audition:
+        description: 'Only send voice samples to Telegram: "mine" (your My Voices) or voice ids, comma separated'
+        type: string
+        default: ''
 
 permissions:
   contents: write # commits the content/sent and content/failed markers
@@ -33,18 +37,27 @@ concurrency:
 
 jobs:
   voice-check:
-    if: inputs.voice_check
+    if: inputs.voice_check || inputs.voice_audition != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Check the ElevenLabs key
+        if: inputs.voice_check
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: python3 scripts/elevenlabs-check.py
+      - name: Send voice samples to Telegram
+        if: inputs.voice_audition != ''
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          AUDITION: ${{ inputs.voice_audition }}
+        run: python3 scripts/voice-audition.py
 
   render:
-    if: ${{ !inputs.voice_check }}
+    if: ${{ !inputs.voice_check && !inputs.voice_audition }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

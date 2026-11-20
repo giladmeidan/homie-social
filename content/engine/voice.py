@@ -3,7 +3,7 @@
 # Adds an ElevenLabs voiceover to audio/<reel>.wav:
 #   1. reads the episode's window.VOICE (dumped by render.py to <reel>_voice.json)
 #   2. makes one TTS clip per line (cached by text+voice+model, so a re-run costs no credits)
-#   3. places each clip at its time, speeding it up a little if it runs into the next line
+#   3. places each clip when its words appear, speeding it up a little (max x1.25) if it runs into the next
 #   4. ducks the music under the voice, mixes, and sets loudness for the render checks
 #
 # Episode format:
@@ -12,8 +12,13 @@
 #     model:'eleven_v4',             // optional; else tries eleven_v4, then eleven_v3
 #     duck:0.7,                      // optional; how far the music drops under the voice (0..1)
 #     gain:1.0,                      // optional; voice level against the music
-#     lines:[[0.3,'בעוד שנה, מישהו ישאל...'],[3.2,'התשובה מתחילה ביום הכניסה.'], ...]
+#     max_lag:0.5,                   // optional; how late a line may start after its words appear
 #   };
+#   Then mark the main titles to read with say:true, e.g. caption(170,['בעוד שנה,'],0.05,3.1,{say:true,...}).
+#   say:'אחת' reads other words than shown (a digit spelled out). Items that appear within 0.6 s of
+#   each other are read as one sentence. Anything not marked say is never read.
+#   Manual mode instead: lines:[[0.3,'text'],...] with times you set yourself.
+#   Budget: Hebrew speech runs about 10 characters a second, so a title has to stay on screen that long.
 #
 # Env: ELEVENLABS_API_KEY (required when the episode has VOICE), ELEVENLABS_VOICE_ID,
 #      VOICE_CACHE (default ./voice-cache), VOICE_MAX_CHARS (default 1500, a guard per reel).
@@ -23,14 +28,33 @@ from scipy.io import wavfile
 from scipy.signal import butter, lfilter
 
 reel = sys.argv[1]
+# --estimate: check that every line fits using ~10 characters/second, no ElevenLabs call, no credits
+ESTIMATE = '--estimate' in sys.argv[2:]
 SR = 44100
 cfg_path = f'{reel}_voice.json'
 if not os.path.exists(cfg_path):
     print('no voice for', reel); sys.exit(0)
 
+def die(msg):
+    print('FAIL voice:', msg, flush=True); sys.exit(1)
+
+
 V = json.load(open(cfg_path, encoding='utf8'))
-LINES = [(float(t), str(txt).strip()) for t, txt in V['lines'] if str(txt).strip()]
-LINES.sort()
+MERGE = float(V.get('merge', 0.6))      # say-items that appear within this many seconds join into one sentence
+MAX_LAG = float(V.get('max_lag', 0.5))  # how late a line may start after its words appear
+if V.get('lines'):  # manual: [time, text]; each line must end before the next one starts
+    LINES = sorted((float(t), None, str(x).strip()) for t, x in V['lines'] if str(x).strip())
+    AUTO = False
+else:               # auto: read exactly the on-screen items marked say, when they appear
+    LINES, AUTO = [], True
+    for a0, b0, txt in sorted((float(a), float(b), str(x).strip()) for a, b, x in V.get('say', []) if str(x).strip()):
+        if LINES and a0 - LINES[-1][3] <= MERGE:
+            t, b, text, _ = LINES[-1]; LINES[-1] = (t, max(b, b0), text + ' ' + txt, a0)
+        else:
+            LINES.append((a0, b0, txt, a0))
+    LINES = [(t, b, text) for t, b, text, _ in LINES]
+if not LINES:
+    die('the episode sets window.VOICE but has no lines: mark the main titles with say:true')
 KEY = os.environ.get('ELEVENLABS_API_KEY', '').strip()
 VOICE = V.get('voice') or os.environ.get('ELEVENLABS_VOICE_ID') or 'EXAVITQu4vr4xnSDxMaL'  # premade "Sarah"
 MODELS = [V['model']] if V.get('model') else ['eleven_v4', 'eleven_v3']
@@ -39,10 +63,6 @@ MAX_CHARS = int(os.environ.get('VOICE_MAX_CHARS', '1500'))
 DUCK = float(V.get('duck', 0.7))
 GAIN = float(V.get('gain', 1.0))
 os.makedirs(CACHE, exist_ok=True)
-
-
-def die(msg):
-    print('FAIL voice:', msg, flush=True); sys.exit(1)
 
 
 def cache_path(text, model):
@@ -127,10 +147,10 @@ def speed_up(x, factor):
 
 
 # ---- credit guard -------------------------------------------------------------------
-need = sum(len(t) for _, t in LINES if not any(os.path.exists(cache_path(t, m)) for m in MODELS))
+need = sum(len(t) for _, _, t in LINES if not any(os.path.exists(cache_path(t, m)) for m in MODELS))
 if need > MAX_CHARS:
     die(f'{need} characters to voice, more than VOICE_MAX_CHARS={MAX_CHARS}; shorten the lines')
-if need and KEY:
+if need and KEY and not ESTIMATE:
     left, tier = credits_left()
     if left is not None:
         print(f'ElevenLabs plan: {tier}, {left} characters left, this reel needs about {need}')
@@ -145,26 +165,44 @@ if music.ndim > 1:
 N = len(music); DUR = N / SR
 voice = np.zeros(N)
 placed, problems = [], []
-for i, (t, text) in enumerate(LINES):  # make every clip first, so one run reports every line that's too long
-    path, used = tts(text)
-    clip = decode(path)
-    end = LINES[i + 1][0] - 0.12 if i + 1 < len(LINES) else DUR - 0.25
-    slot = end - t
+cursor = 0.0
+for i, (t, end, text) in enumerate(LINES):  # every clip is made first, so one run reports every line that doesn't fit
+    if ESTIMATE:
+        clip, used = np.zeros(int(len(text) / 10.0 * SR)), 'estimate'
+    else:
+        path, used = tts(text)
+        clip = decode(path)
     length = len(clip) / SR
-    if length > slot * 1.25:
-        fit = int(len(text) * slot * 1.25 / length)
-        problems.append(f'{t}s: {length:.2f}s of speech for a {slot:.2f}s slot, cut to about {fit} characters: {text}')
-    placed.append((t, text, clip, slot, used))
+    start = max(t, cursor + 0.08)            # never on top of the previous line
+    limits = [DUR - 0.2]
+    if end is not None:
+        limits.append(end + 0.35)            # finish while its words are still on screen
+    if i + 1 < len(LINES):                   # leave room for the next line to start on time
+        limits.append(LINES[i + 1][0] + (MAX_LAG if AUTO else 0) - 0.08)
+    room = min(limits) - start
+    f = length / room if room > 0 else 99
+    if f > 1.25:
+        fit = max(1, int(len(text) * max(room, 0) * 1.25 / length))
+        problems.append(f'{t:.2f}s: {length:.2f}s of speech, room for {max(room, 0):.2f}s '
+                        f'(cut to about {fit} characters or drop say): {text}')
+        f = 1.25
+    f = max(f, 1.0)
+    placed.append((t, start, text, clip, f, used))
+    cursor = start + length / f
 if problems:
-    die('lines too long for their slots (the clips are cached, only the shortened lines cost credits):\n  ' + '\n  '.join(problems))
-for t, text, clip, slot, used in placed:
-    note = ''
-    if len(clip) / SR > slot:
-        f = len(clip) / SR / slot
-        clip = speed_up(clip, f); note = f' sped up x{f:.2f}'
-    a = int(t * SR); b = min(N, a + len(clip))
+    die('lines that don\'t fit (made clips are cached, only changed lines cost credits):\n  ' + '\n  '.join(problems))
+if ESTIMATE:
+    for t, start, text, clip, f, used in placed:
+        print(f'fits {start:5.2f}-{start + len(clip) / SR / f:5.2f}s x{f:.2f}  {text}')
+    print('ok estimate', reel); sys.exit(0)
+for t, start, text, clip, f, used in placed:
+    if f > 1.001:
+        clip = speed_up(clip, f)
+    a = int(start * SR); b = min(N, a + len(clip))
     voice[a:b] += clip[:b - a]
-    print(f'voice {t:5.2f}s  {len(clip) / SR:4.2f}s/{slot:4.2f}s  {used}{note}  {text}', flush=True)
+    lag = f' +{start - t:.2f}s late' if start - t > 0.01 else ''
+    fast = f' x{f:.2f}' if f > 1.001 else ''
+    print(f'voice {start:5.2f}-{start + len(clip) / SR:5.2f}s{lag}{fast}  {used}  {text}', flush=True)
 
 # ---- duck and mix -------------------------------------------------------------------
 def lp(x, f):
