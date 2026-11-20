@@ -19,6 +19,10 @@
 #   each other are read as one sentence. Anything not marked say is never read.
 #   Manual mode instead: lines:[[0.3,'text'],...] with times you set yourself.
 #   Budget: Hebrew speech runs about 10 characters a second, so a title has to stay on screen that long.
+#   Coverage: every main title (caption >= 84 px) must be read (say:true / say:'<spoken words>') or marked
+#   say:false on purpose. Write the reel narration-first: adjust the spoken words and the scene timing until
+#   `python3 voice.py rNN --estimate` prints "ok estimate" (it checks fit and coverage, no credits).
+#   Full process: homie/marketing/voiceover-guide.md in the Project. Example: content/episodes/r9001.js.
 #
 # Env: ELEVENLABS_API_KEY (required when the episode has VOICE), ELEVENLABS_VOICE_ID,
 #      VOICE_CACHE (default ./voice-cache), VOICE_MAX_CHARS (default 1500, a guard per reel).
@@ -30,6 +34,8 @@ from scipy.signal import butter, lfilter
 reel = sys.argv[1]
 # --estimate: check that every line fits using ~10 characters/second, no ElevenLabs call, no credits
 ESTIMATE = '--estimate' in sys.argv[2:]
+CPS = float(os.environ.get('VOICE_CPS', '10'))   # estimate speed; real Hebrew TTS measured ~9.9 chars/s
+MAXF = 1.15 if ESTIMATE else 1.25               # the estimate keeps a margin for the real voice
 SR = 44100
 cfg_path = f'{reel}_voice.json'
 if not os.path.exists(cfg_path):
@@ -55,6 +61,11 @@ else:               # auto: read exactly the on-screen items marked say, when th
     LINES = [(t, b, text) for t, b, text, _ in LINES]
 if not LINES:
     die('the episode sets window.VOICE but has no lines: mark the main titles with say:true')
+# coverage: every main title (caption >= 84px) must be read (say:true / say:'...') or deliberately silent (say:false)
+UNREAD = [f'{a:.2f}s "{x}"' for a, b, x, st in V.get('titles', []) if st == 'unread']
+if UNREAD:
+    print('main titles the voice does not read (add say:true, say:\'<spoken words>\', or say:false):\n  '
+          + '\n  '.join(UNREAD), flush=True)
 KEY = os.environ.get('ELEVENLABS_API_KEY', '').strip()
 VOICE = V.get('voice') or os.environ.get('ELEVENLABS_VOICE_ID') or 'EXAVITQu4vr4xnSDxMaL'  # premade "Sarah"
 MODELS = [V['model']] if V.get('model') else ['eleven_v4', 'eleven_v3']
@@ -168,7 +179,7 @@ placed, problems = [], []
 cursor = 0.0
 for i, (t, end, text) in enumerate(LINES):  # every clip is made first, so one run reports every line that doesn't fit
     if ESTIMATE:
-        clip, used = np.zeros(int(len(text) / 10.0 * SR)), 'estimate'
+        clip, used = np.zeros(int(len(text) / CPS * SR)), 'estimate'
     else:
         path, used = tts(text)
         clip = decode(path)
@@ -181,11 +192,11 @@ for i, (t, end, text) in enumerate(LINES):  # every clip is made first, so one r
         limits.append(LINES[i + 1][0] + (MAX_LAG if AUTO else 0) - 0.08)
     room = min(limits) - start
     f = length / room if room > 0 else 99
-    if f > 1.25:
-        fit = max(1, int(len(text) * max(room, 0) * 1.25 / length))
+    if f > MAXF:
+        fit = max(1, int(len(text) * max(room, 0) * MAXF / length))
         problems.append(f'{t:.2f}s: {length:.2f}s of speech, room for {max(room, 0):.2f}s '
                         f'(cut to about {fit} characters or drop say): {text}')
-        f = 1.25
+        f = MAXF
     f = max(f, 1.0)
     placed.append((t, start, text, clip, f, used))
     cursor = start + length / f
@@ -194,6 +205,8 @@ if problems:
 if ESTIMATE:
     for t, start, text, clip, f, used in placed:
         print(f'fits {start:5.2f}-{start + len(clip) / SR / f:5.2f}s x{f:.2f}  {text}')
+    if UNREAD:
+        die(f'{len(UNREAD)} main title(s) not covered (listed above)')
     print('ok estimate', reel); sys.exit(0)
 for t, start, text, clip, f, used in placed:
     if f > 1.001:

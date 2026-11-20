@@ -32,6 +32,7 @@ with sync_playwright() as p:
     if _voice is not None:
         _voice['say']=[[a*K,b*K,x] for a,b,x in pg.evaluate("window.SAY||[]")]   # [start,end,text] of every item marked say
         if _voice.get('lines'): _voice['lines']=[[t*K,x] for t,x in _voice['lines']]
+        _voice['titles']=[[a*K,b*K,x,st] for a,b,x,st in pg.evaluate("window.TITLES||[]")]   # main titles: read / silent / unread
         json.dump(_voice,open(f'{reel}_voice.json','w'),ensure_ascii=False)
     for name,t0,t1 in pg.evaluate("window.SCENES"):
         if args and name not in args: continue

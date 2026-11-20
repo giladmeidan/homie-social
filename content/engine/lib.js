@@ -15,9 +15,11 @@ const EVENTS=[];const ev=(t,k,v=1)=>EVENTS.push({t,k,v});
 const ITEMS=[];
 /* voiceover: any item with o.say is read aloud by voice.py when the episode sets window.VOICE.
    say:true reads the element's own text; say:'...' reads that text (e.g. a number spelled out). */
-const SAY=[];window.SAY=SAY;const _txt=(h)=>String(h).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
+const SAY=[];window.SAY=SAY;const TITLES=[];window.TITLES=TITLES;   // main titles (captions >= 84px), for the coverage check
+const _txt=(h)=>String(h).replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/\s+/g,' ').trim();
 function at(el,a,b,o={}){const it=Object.assign({anim:'pop',dur:.32,dy:40,s0:.7,fo:.15},o,{el,a,b});ITEMS.push(it);if(o.sfx)ev(a,o.sfx,o.v||1);
   if(o.say){const txt=o.say===true?_txt(el.innerHTML):_txt(o.say);if(txt)SAY.push([a,b,txt])}
+  if(o._title)TITLES.push([a,b,_txt(el.innerHTML),o.say===false?'silent':(o.say?'read':'unread')]);
   el.style.display='none';return el}
 function runItems(t){for(const it of ITEMS){const on=t>=it.a&&t<it.b;show(it.el,on);if(!on)continue;const l=t-it.a;const p=seg(l,0,it.dur);
   const e=it.anim==='fade'?outCubic(p):outBack(p);const f=it.fo>0?1-seg(t,it.b-it.fo,it.fo):1;let tr='';
@@ -31,7 +33,7 @@ const bg=(color,a,b)=>at($(`left:0;top:0;width:1080px;height:1920px;background:$
 /* ---------- text ---------- */
 const hl=(top,txt,c=INK,fs=124)=>`<div class="w" style="position:absolute;left:0;width:1080px;top:${top}px;text-align:center;font:600 ${fs}px/1.05 F;color:${c}">${txt}</div>`;
 const sub=(top,txt,c=MUTED)=>`<div class="w" style="position:absolute;left:0;width:1080px;top:${top}px;text-align:center;font:500 60px/1.1 R;color:${c}">${txt}</div>`;
-function caption(top,lines,a,b,o={}){const el=$(`left:0;top:${top}px;width:1080px;text-align:center;font:600 ${o.fs||110}px/1.12 F;color:${o.c||'#fff'}`,lines.map((l,i)=>`<div class="w" style="color:${(o.cols&&o.cols[i])||o.c||'#fff'}">${l}</div>`).join(''));return at(el,a,b,Object.assign({dy:40,sfx:o.sfx},o))}
+function caption(top,lines,a,b,o={}){const el=$(`left:0;top:${top}px;width:1080px;text-align:center;font:600 ${o.fs||110}px/1.12 F;color:${o.c||'#fff'}`,lines.map((l,i)=>`<div class="w" style="color:${(o.cols&&o.cols[i])||o.c||'#fff'}">${l}</div>`).join(''));return at(el,a,b,Object.assign({dy:40,sfx:o.sfx,_title:(o.fs||110)>=84},o))}
 
 /* ---------- chat bubble ----------
    side: 'r' | 'l' | 'c'. name: optional sender label. tone: 'white'|'blue'|'ink'|'soft'. tail: 'down'|'side'|null */

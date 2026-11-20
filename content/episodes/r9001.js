@@ -1,7 +1,9 @@
-// VOICE TEST (9001) — reel H14 with an ElevenLabs Hebrew voiceover on top. Preview only, never posted.
+// VOICE TEST (9001) — reel H14 rebuilt narration-first: every main title is spoken, scene timing adjusted to the speech.
+// Preview only, never posted.
 // Original: Reel H14 (1014) — renting smart · clean editorial: a question from a year ahead ("was this scratch here when you moved in?"), answered by three move-in-day habits: photograph every room, the meters, test every key, then send it all in one message.
-const DUR=23.0;
-const SCENES=[['a',0,8.0],['b',8.0,15.6],['c',15.6,DUR]];
+const IN=0.8;            // intro gets longer so 'התשובה מתחילה ביום הכניסה' can be said
+const DUR=26.2;
+const SCENES=[['a',0,8.0+IN],['b',8.0+IN,14.7+IN],['c',14.7+IN,DUR]];
 Tt.style.zIndex=50;
 const LINEC='#D6DEEA',GREY='#9AA1AC',WALL='#F4F6FA';
 const ok=(s=48)=>`<svg width="${s}" height="${s}" viewBox="0 0 50 50"><circle cx="25" cy="25" r="23" fill="${BLUE}"/><path d="M14 26 L22 34 L37 17" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -9,7 +11,7 @@ const wallSVG=(w,scr=1)=>`<svg viewBox="0 0 800 480" width="${w}" height="${w*.6
  <rect x="90" y="80" width="240" height="180" rx="6" fill="#fff" stroke="${INK}" stroke-width="7"/><line x1="210" y1="80" x2="210" y2="260" stroke="${INK}" stroke-width="5"/>
  <rect x="530" y="96" width="190" height="322" rx="6" fill="#fff" stroke="${INK}" stroke-width="7"/><circle cx="556" cy="270" r="9" fill="${INK}"/>
  <path d="M300 352 l30 -16 l22 12 l34 -20 l26 12" stroke="${INK}" stroke-width="${6*scr}" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const AEND=15.6;
+const AEND=14.7+IN;   // the "send" beat keeps its original 2.2 s
 
 bg('#fff',0,DUR);
 
@@ -25,14 +27,14 @@ at(q1,1.15,3.1,{dy:30,s0:.6,fo:.2,sfx:'msg'});
 caption(1470,['…הייתה?'],2.0,3.1,{fs:72,c:MUTED,fo:.2,anim:'up',dy:20});
 
 /* ---------- the answer starts on move-in day ---------- */
-caption(560,['התשובה'],3.15,4.6,{fs:112,c:INK,fo:.15,sfx:'whoosh'});
-caption(700,['מתחילה'],3.35,4.6,{fs:112,c:INK,fo:.15});
-caption(840,['ביום הכניסה.'],3.55,4.6,{fs:112,c:BLUE,fo:.15,sfx:'pop2'});
-caption(1060,['שלושה הרגלים. לפני הארגזים.'],3.9,4.6,{fs:56,c:MUTED,fo:.15,anim:'up',dy:20});
+caption(560,['התשובה'],3.15,4.6+IN,{say:'התשובה מתחילה ביום הכניסה.',fs:112,c:INK,fo:.15,sfx:'whoosh'});
+caption(700,['מתחילה'],3.35,4.6+IN,{say:false,fs:112,c:INK,fo:.15});
+caption(840,['ביום הכניסה.'],3.55,4.6+IN,{say:false,fs:112,c:BLUE,fo:.15,sfx:'pop2'});
+caption(1060,['שלושה הרגלים. לפני הארגזים.'],3.9,4.6+IN,{fs:56,c:MUTED,fo:.15,anim:'up',dy:20});
 
 /* ---------- progress pills (stay through the steps) ---------- */
-const S0=4.6,S1=7.7,S2=10.6,S3=13.4;   // step starts; S3 = send
-const DONE=[7.3,10.2,13.0];
+const S0=4.6+IN,S1=S0+2.7,S2=S1+2.6,S3=S2+2.6;   // steps a little tighter: each spoken step is ~1.6 s
+const DONE=[S1-.4,S2-.4,S3-.4];
 const PILLS=['חדרים','מונים','מפתחות'];
 const pills=$(`left:0;top:1600px;width:1080px;display:flex;justify-content:center;gap:22px;direction:rtl`,PILLS.map(p=>`<div class="pl w" style="height:84px;padding:0 34px;border-radius:42px;border:4px solid ${LINEC};font:700 42px/76px R;color:${GREY};display:flex;align-items:center;gap:12px"><span class="ic" style="display:none">${ok(40)}</span>${p}</div>`).join(''));
 at(pills,S0,AEND,{anim:'up',dy:30,fo:.2,up:(l,t)=>{[...pills.querySelectorAll('.pl')].forEach((p,i)=>{const done=t>=DONE[i],cur=!done&&t>=[S0,S1,S2][i];
@@ -110,31 +112,29 @@ caption(1120,['לבעלי הדירה. עם תאריך.'],S3+.9,AEND,{fs:58,c:MUT
 at($('left:0;top:1845px;width:1080px;text-align:center;font:500 34px/1.2 R;color:#8C8C8C;white-space:nowrap','הדמויות והמצבים בדיוניים · טיפים כלליים'),0.4,AEND,{anim:'none',fo:.2});
 
 /* ---------- payoff: a year later ---------- */
-const P0=AEND,P1=19.4;
-caption(170,['בעוד שנה.'],P0+.05,P1,{say:true,fs:104,c:INK,fo:.15,sfx:'pop'});
+const P0=AEND,P1=P0+6.4;   // payoff longer: the question's answer, then the moral, both spoken
+caption(170,['בעוד שנה.'],P0+.05,P1,{say:'בעוד שנה? הייתה. הנה התמונה.',fs:104,c:INK,fo:.15,sfx:'pop'});
 const qa=$(`left:0;top:420px;width:1080px;display:flex;justify-content:flex-end;padding:0 90px`,`<div class="w" style="direction:rtl;background:#fff;border:5px solid ${INK};border-radius:50px;padding:24px 44px;font:500 56px/1.15 R;color:${INK}">״השריטה הזאת?״</div>`);
 at(qa,P0+.3,P1,{dy:30,s0:.6,fo:.2,sfx:'msg'});
 const qb=$(`left:0;top:600px;width:1080px;display:flex;justify-content:flex-start;padding:0 90px`,`<div style="direction:rtl;background:${BLUE};border-radius:50px;padding:26px 30px 26px 44px;display:flex;align-items:center;gap:24px">
  <div class="w" style="font:700 56px/1.15 R;color:#fff">״הייתה. הנה התמונה.״</div>
  <div style="width:150px;height:96px;border-radius:14px;background:#fff;overflow:hidden">${wallSVG(160)}</div></div>`);
-at(qb,P0+1.1,P1,{say:'הייתה. הנה התמונה.',dy:30,s0:.6,fo:.2,sfx:'msg'});
+at(qb,P0+1.1,P1,{dy:30,s0:.6,fo:.2,sfx:'msg'});
 ev(P0+1.4,'ding',1.2);
-caption(1000,['מה שמצלמים בכניסה,'],P0+1.9,P1,{fs:84,c:INK,fo:.15,anim:'up',dy:26,sfx:'whoosh'});
-caption(1120,['לא מתווכחים עליו'],P0+2.15,P1,{fs:84,c:BLUE,fo:.15,anim:'up',dy:26});
-caption(1235,['ביציאה.'],P0+2.35,P1,{fs:84,c:BLUE,fo:.15,anim:'up',dy:26});
+caption(1000,['מה שמצלמים בכניסה,'],P0+2.9,P1,{say:'מה שמצלמים בכניסה, לא מתווכחים עליו ביציאה.',fs:84,c:INK,fo:.15,anim:'up',dy:26,sfx:'whoosh'});
+caption(1120,['לא מתווכחים עליו'],P0+3.15,P1,{say:false,fs:84,c:BLUE,fo:.15,anim:'up',dy:26});
+caption(1235,['ביציאה.'],P0+3.35,P1,{say:false,fs:84,c:BLUE,fo:.15,anim:'up',dy:26});
 
 /* ---------- homie ---------- */
-const E0=21.0;
+const E0=P1+3.4;
 wordmark(P1,DUR);
 const fin=$('left:0;top:380px;width:1080px;height:900px;',`${hl(250,'דירה מאנשים פרטיים.',INK,100)}${hl(380,'ותמונות מהיום הראשון.',BLUE,92)}${sub(560,'דירות וחדרים, בלי מתווכים.')}`);
-at(fin,P1+.05,E0,{say:'דירה מאנשים פרטיים.',dy:90,s0:.92,dur:.4,sfx:'pop2'});
+at(fin,P1+.05,E0,{say:'דירה מאנשים פרטיים. ותמונות מהיום הראשון.',dy:90,s0:.92,dur:.4,sfx:'pop2'});
 ev(P1+.5,'ding',1.2);
 endCard(E0,DUR,'יום הכניסה, בתמונות.');
 
 function render(t){runItems(t);turtleWhite(t,P1+.05,[E0],E0+.25)}
-window.AUDIO={dur:DUR,seed:9001,sections:[[0,3.1,'MIN',.13,0,0],[3.1,AEND,'FC',.15,1,0],[AEND,DUR,'POP',.18,1,1]],ticks:[4.6,13.4]};
-
-/* ---------- ElevenLabs voiceover (voice.py) ---------- */
-window.STRETCH=1.15;        // same reel, 15% slower, so the voice has room
-window.VOICE={duck:0.7};   // reads the items marked say:true / say:'...'
+window.AUDIO={dur:DUR,seed:9001,sections:[[0,3.1,'MIN',.13,0,0],[3.1,AEND,'FC',.15,1,0],[AEND,DUR,'POP',.18,1,1]],ticks:[S0,S3]};
+window.STRETCH=1.1;
+window.VOICE={duck:0.7};   // narration = the say marks above
 window.render=render;window.EVENTS=EVENTS;window.SCENES=SCENES;window.DUR=DUR;render(0);
