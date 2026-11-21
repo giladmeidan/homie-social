@@ -1,7 +1,0 @@
-{
-  "reel": 1023,
-  "name": "reel-h023-city-which-floor",
-  "batch": "h023",
-  "error": "bash build.sh r1023... failed:\ndone r1023 a 198\ndone r1023 b 222\nok r1023\nElevenLabs plan: starter, 39246 characters left, this reel needs about 136\nFAIL voice: lines that don't fit (made clips are cached, only changed lines cost credits):\n  2.75s: 2.54s of speech, room for 1.87s (cut to about 19 characters or drop say): קרקע: כל הרחוב בחלון.\n  4.70s: 2.39s of speech, room for 1.71s (cut to about 17 characters or drop say): שתיים: בדיוק באמצע.\n  6.65s: 2.10s of speech, room for 1.67s (cut to about 17 characters or drop say): רביעית, בלי מעלית.\n  8.60s: 3.49s of speech, room for 1.86s (cut to about 12 characters or drop say): הגג: נוף. וחם בקיץ.\n  10.55s: 2.88s of speech, room for 1.94s (cut to about 26 characters or drop say): איזו קומה הייתם שוכרים? בתגובות.",
-  "failed_at": "2026-11-21T18:31:19+02:00"
-}
