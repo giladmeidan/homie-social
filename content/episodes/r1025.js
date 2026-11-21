@@ -54,7 +54,7 @@ at(cnt,H0,F0,{anim:'none',fo:.1,up:(l)=>{cnt.querySelector('.c').textContent=Mat
 /* ---------- four floors (white) ---------- */
 bg('#fff',F0,ASK);
 const FLOORS=[['קרקע.','כל הרחוב בחלון.','קרקע. כל הרחוב בחלון.'],['קומה 2.','שקט יחסי.','קומה שתיים. שקט יחסי'],
-  ['קומה 4.','בלי מעלית.','קומה ארבע, בלי מעלית'],['הגג.','נוף וקיץ לוהט.','הגג. נוף וקיץ לוהט']];
+  ['קומה 4.','בלי מעלית.','קומה ארבע, בלי מעלית'],['הגג.','נוף. וחום.','הגג. נוף וחום']];
 const b2=$(`left:250px;top:590px;width:560px`,buildingSVG(INK,'#fff',{w:560}));
 at(b2,F0,ASK,{anim:'none',fo:.12,up:(l,t)=>{
   let i=Math.min(3,Math.floor((t-F0)/FL));const t0=F0+i*FL;
