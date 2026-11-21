@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-21T20:32:25.333Z",
+  "generated_at": "2026-11-21T21:09:45.472Z",
   "window_days": 30,
   "how_to_read": "vs_typical = first-day views divided by the account's typical reel (1 = typical). Under about 100 views a reel, single-reel differences are mostly noise: trust formats, not reels.",
   "accounts": {
@@ -105,8 +105,8 @@
       "rejected": 1,
       "ig_vs_typical": null,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 4.4,
-      "ig_skip_rate": 0.7,
+      "ig_avg_watch_s": 4.5,
+      "ig_skip_rate": 0.69,
       "under_typical_in_a_row": 0,
       "flag": null
     },
@@ -190,12 +190,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 58,
+        "day1": 60,
         "vs_typical": null,
-        "views": 58,
-        "reach": 39,
-        "avg_watch_s": 4.4,
-        "skip_rate": 0.7,
+        "views": 60,
+        "reach": 43,
+        "avg_watch_s": 4.5,
+        "skip_rate": 0.69,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -210,15 +210,15 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 165,
+        "day1": 166,
         "vs_typical": null,
-        "views": 165,
-        "reach": 116,
-        "avg_watch_s": 7.6,
-        "skip_rate": 0.62,
+        "views": 166,
+        "reach": 117,
+        "avg_watch_s": 7.5,
+        "skip_rate": 0.63,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
-        "comments_per_1000": 17.2
+        "comments_per_1000": 17.1
       },
       "tiktok": null
     },
@@ -330,12 +330,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 50,
+        "day1": 54,
         "vs_typical": null,
-        "views": 50,
-        "reach": 42,
-        "avg_watch_s": 5.2,
-        "skip_rate": 0.7,
+        "views": 54,
+        "reach": 45,
+        "avg_watch_s": 5.4,
+        "skip_rate": 0.66,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -356,12 +356,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 36,
+        "day1": 37,
         "vs_typical": null,
-        "views": 36,
+        "views": 37,
         "reach": 33,
         "avg_watch_s": 1.8,
-        "skip_rate": 0.91,
+        "skip_rate": 0.89,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
