@@ -1,0 +1,29 @@
+{
+  "reel": 1024,
+  "name": "reel-h024-city-same-rent-three-flats",
+  "batch": "h024",
+  "queued_as": "2eaf294e427f",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        6.6
+      ],
+      [
+        "b",
+        6.6,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.2
+    ],
+    "stretch": 1.0
+  },
+  "sent_at": "2026-11-21T18:40:49+02:00"
+}
