@@ -187,6 +187,14 @@ npm run dashboard     # opens it and copies the admin key for the sign-in box
 
 **Upgrading an existing database** (once, before deploying this version): `npm run db:migrate:insights`, then `npm run db:migrate:beats` (adds `reels.beats`; run it **before** `npm run deploy`, because the new Worker writes that column). It adds first-day views, a running total of views and the activity log, and backfills first-day views from the snapshots already collected.
 
+## Learning from results (from 22.11.2026)
+
+- **Reject reasons.** After ❌ Reject the bot asks why (Off target, Cringe, Boring, Looks bad, Wrong fact, Other) and then takes one line of note (or `/skip`). Both are stored with the reel. Needs `npm run db:migrate:feedback` once.
+- **`GET /api/insights`** (admin key): the last 30 days per reel and per format (first-day views against the typical reel, watch time, skip rate, shares/saves/comments per 1,000 reached) and every rejection with its reason. `src/feedback.js`.
+- **`content/insights.json`**: `.github/workflows/insights.yml` copies `/api/insights` into the repo at 10:40 and 17:40 UTC, because the reel-making task cannot reach the Worker. Run it by hand from Actions → Copy insights.
+- **Sunday review**: every Sunday from 09:30 Israel time the bot sends five lines on last week's reels (best, weakest, formats, rejections, followers).
+- **Reels plan v2 checks** (`scripts/rules_v2.py`, run by `render-batch.py`): daily reels from H27 on must carry `format` and `slot` in the batch file, declare `window.COVER` and `window.PROMPT` (on screen by 3 s), stay inside the format's length, keep the brand ending to 1 s (1.5 s with an end card, feature reels only), keep FEAT cards to feature reels, and keep the voice to about 200 characters. One reel per slot unless the batch entry says `"replaces": <reel>`. Tests: `python3 -m unittest discover -s test -p 'test_*.py'`.
+
 ## Development
 
 ```bash
@@ -204,6 +212,9 @@ npm run logs      # live logs from the deployed Worker
 | `src/store.js` | D1 queries |
 | `src/index.js` | Worker: HTTP routes, media hosting, webhook, cron, dashboard auth |
 | `src/stats.js` | Hourly Instagram stats collection |
+| `src/feedback.js` | Insights for the reel task (`/api/insights`) and the Sunday review |
+| `scripts/rules_v2.py` | Reels plan v2 checks used by `render-batch.py` |
+| `scripts/pull-insights.mjs` | Copies `/api/insights` into `content/insights.json` (workflow: *Copy insights*) |
 | `src/insights.js` | Typical reel, first-day comparisons, ranges and the plain-language summary |
 | `src/retention.js` | Estimated retention curve: hook / buildup / payoff and the weakest link |
 | `src/health.js` | System page health checks |
@@ -218,6 +229,7 @@ npm run logs      # live logs from the deployed Worker
 | `migrations/001-tiktok.sql` | Adds the TikTok columns to a database made before TikTok |
 | `migrations/002-insights.sql` | Dashboard v2: first-day views, total views, activity log |
 | `migrations/003-beats.sql` | Retention insight: each reel's structure |
+| `migrations/004-feedback.sql` | Reject reason and note on each reel |
 
 ## Not verified yet
 

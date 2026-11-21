@@ -20,6 +20,9 @@ Batch file format (written by the nightly reel task):
           "title": "ריל 48 · דגלים אדומים · #7",    # shown in Telegram
           "caption": "...",                        # Instagram caption, ready to post
           "at": null,                              # optional "2026-11-21 19:00" (Asia/Jerusalem)
+          "format": "pick",                        # v2 reels: see scripts/rules_v2.py (pick, pain, roommate,
+          "slot": "2026-11-22 13",                 #   feature, smart, experiment), the schedule slot, and
+          "replaces": null,                        #   optionally the reel this one replaces in that slot
           "preview": false                         # optional: true = send to Telegram as a plain video
                                                    #   with the caption (no Approve button, nothing is
                                                    #   posted); Gilad downloads and uploads it himself
@@ -34,6 +37,9 @@ Markers (committed back by the workflow so a re-run never sends a reel twice):
 import glob, json, os, re, shutil, subprocess, sys, time
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import rules_v2  # noqa: E402  reels plan v2 checks
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENGINE = os.path.join(ROOT, 'content', 'engine')
@@ -87,6 +93,9 @@ def validate(item):
     if not os.path.exists(os.path.join(EPISODES, item['episode'] + '.js')):
         raise ValueError(f'content/episodes/{item["episode"]}.js not found')
     check_not_repeat(item)
+    if rules_v2.applies(item):
+        src = open(os.path.join(EPISODES, item['episode'] + '.js'), encoding='utf8').read()
+        rules_v2.pre_check(item, src, SENT)
 
 
 def _opening(caption):
@@ -148,10 +157,12 @@ def build(item):
         raise RuntimeError('build finished but no mp4 was written')
     cfg_path = os.path.join(work, ep + '_cfg.json')
     dur = json.load(open(cfg_path))['dur'] if os.path.exists(cfg_path) else None
-    voiced = os.path.exists(os.path.join(work, ep + '_voice.json'))
+    voice_path = os.path.join(work, ep + '_voice.json')
+    voiced = os.path.exists(voice_path)
+    voice = json.load(open(voice_path, encoding='utf8')) if voiced else None
     beats_path = os.path.join(work, ep + '_beats.json')
     beats = json.load(open(beats_path)) if os.path.exists(beats_path) else None
-    return out, dur, voiced, beats
+    return out, dur, voiced, beats, voice
 
 
 def check(path, dur):
@@ -251,8 +262,10 @@ def main():
             print(f'::group::{label}', flush=True)
             try:
                 validate(item)
-                path, dur, voiced, beats = build(item)
+                path, dur, voiced, beats, voice = build(item)
                 warnings, length = check(path, dur)
+                if rules_v2.applies(item):
+                    rules_v2.post_check(item, length, beats, voice)
                 if item.get('preview'):
                     queued = preview(item, path, manual=True)
                     warnings.append('manual upload: sent as a plain video, not in the approval queue')
@@ -263,6 +276,7 @@ def main():
                     queued = enqueue(item, path, beats)
                 if not DRY_RUN:
                     write_marker(SENT, reel, {'reel': reel, 'name': item['name'], 'batch': batch.get('batch'),
+                                              'format': item.get('format'), 'slot': item.get('slot'),
                                               'queued_as': queued, 'length': round(length, 2), 'warnings': warnings, 'beats': beats,
                                               'sent_at': datetime.now(TZ).isoformat(timespec='seconds')})
                     if os.path.exists(marker(FAILED, reel)):

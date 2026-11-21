@@ -16,7 +16,8 @@
     "dashboard": "node scripts/dashboard.mjs",
     "render": "python3 scripts/render-batch.py",
     "db:migrate:insights": "wrangler d1 execute homie-social --remote --file=migrations/002-insights.sql",
-    "db:migrate:beats": "wrangler d1 execute homie-social --remote --file=migrations/003-beats.sql"
+    "db:migrate:beats": "wrangler d1 execute homie-social --remote --file=migrations/003-beats.sql",
+    "db:migrate:feedback": "wrangler d1 execute homie-social --remote --file=migrations/004-feedback.sql"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"

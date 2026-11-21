@@ -4,6 +4,7 @@ const COLUMNS = [
   'status', 'title', 'caption', 'media_key', 'scheduled_at', 'approved_at', 'published_at',
   'container_id', 'ig_media_id', 'permalink', 'error', 'tg_message_id', 'updated_at',
   'tiktok_status', 'tiktok_publish_id', 'tiktok_error', 'tiktok_updated_at', 'beats',
+  'reject_reason', 'reject_note',
 ];
 const ACTIVE = ['approved', 'creating', 'processing', 'publishing'];
 const TIKTOK_ACTIVE = ['queued', 'uploading', 'processing'];

@@ -1,0 +1,40 @@
+name: Copy insights
+
+# The reel-making task runs in a sandbox that cannot reach the Worker, so this copies
+# GET /api/insights (reel numbers by format, reject reasons) into content/insights.json
+# shortly before each reel run (13:03 and 20:03 Israel time; 10:40 and 17:40 UTC in winter).
+on:
+  schedule:
+    - cron: '40 10,17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: insights
+  cancel-in-progress: false
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Copy /api/insights into the repo
+        env:
+          HOMIE_SOCIAL_URL: ${{ secrets.HOMIE_SOCIAL_URL }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: node scripts/pull-insights.mjs
+      - name: Commit if changed
+        run: |
+          git config user.name "homie-insights-bot"
+          git config user.email "homie-insights-bot@users.noreply.github.com"
+          git add content/insights.json
+          if git diff --cached --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -m "Insights: $(date -u +%Y-%m-%dT%H:%MZ)"
+          for i in 1 2 3; do git push && exit 0; git pull --rebase; done
+          exit 1

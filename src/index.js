@@ -10,6 +10,7 @@ import { igData, tiktokData, findings, reelDetail, parseRange } from './insights
 import { healthChecks } from './health.js';
 import { TERMS, PRIVACY } from './legal.js';
 import { maybeCollectTikTokStats } from './tiktok-stats.js';
+import { insightsJson, maybeWeeklyReview } from './feedback.js';
 import {
   createTikTok, authorizeUrl, exchangeCode, refreshTikTokToken, tokenRecord,
   loadTikTokToken, saveTikTokToken, getTikTokToken,
@@ -415,6 +416,11 @@ async function handleApi(request, env, url) {
     return json(out);
   }
 
+  // What the reel-making task learns from (copied into the repo by .github/workflows/insights.yml).
+  if (request.method === 'GET' && url.pathname === '/api/insights') {
+    return json(await insightsJson(store));
+  }
+
   if (request.method === 'GET' && url.pathname === '/api/reels') {
     return json({ reels: await store.listReels(100) });
   }
@@ -480,6 +486,14 @@ export default {
     await pipeline.tick();
     // Hourly stats for the dashboard. Failures are recorded and shown there, never thrown.
     await maybeCollectStats({ ig, store }).catch((err) => console.error('stats failed:', err));
+    // Sunday morning: five lines on last week's reels to the approval chat.
+    if (env.TELEGRAM_CHAT_ID) {
+      await maybeWeeklyReview({
+        store,
+        timeZone: env.TIME_ZONE || 'Asia/Jerusalem',
+        say: (text) => tg.send('sendMessage', { chat_id: env.TELEGRAM_CHAT_ID, text }),
+      }).catch((err) => console.error('weekly review failed:', err));
+    }
     // Keeps the 24-hour TikTok token fresh, which also rolls the yearly refresh token forward.
     if (tiktokConfigured(env)) await keepTikTokFresh(env, store, tg);
     // Hourly TikTok stats, only once TikTok is connected.

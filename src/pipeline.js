@@ -31,6 +31,25 @@ const approvalKeyboard = (id) => ({
   ],
 });
 
+// Why a reel was turned down. Stored with the reel and read by the reel-making task, so the next
+// reels avoid the same mistake. Codes stay short: Telegram limits callback data to 64 bytes.
+export const REJECT_REASONS = [
+  ['target', 'Off target'],
+  ['cringe', 'Cringe'],
+  ['boring', 'Boring'],
+  ['looks', 'Looks bad'],
+  ['fact', 'Wrong fact'],
+  ['other', 'Other'],
+];
+const REASON_LABEL = Object.fromEntries(REJECT_REASONS);
+
+const reasonKeyboard = (id) => ({
+  inline_keyboard: [
+    REJECT_REASONS.slice(0, 3).map(([code, text]) => ({ text, callback_data: `why:${id}:${code}` })),
+    REJECT_REASONS.slice(3).map(([code, text]) => ({ text, callback_data: `why:${id}:${code}` })),
+  ],
+});
+
 const retryKeyboard = (id) => ({
   inline_keyboard: [[{ text: '🔁 Retry', callback_data: `retry:${id}` }]],
 });
@@ -233,8 +252,28 @@ export function createPipeline({
     const reel = await store.getReel(id);
     await clearButtons(reel);
     await log('info', 'publisher', `Rejected: ${label(reel)}`, id);
-    await say(`🗑 Rejected: ${label(reel)}. Nothing was posted.`);
+    await say(`🗑 Rejected: ${label(reel)}. Nothing was posted.\nWhy? (it teaches the next reels)`, {
+      reply_markup: reasonKeyboard(id),
+    });
     return 'Rejected';
+  }
+
+  // The reason buttons under a rejection. The reason can be changed by tapping another one.
+  async function rejectReason(id, code) {
+    if (!REASON_LABEL[code]) return 'Unknown reason';
+    const reel = await store.getReel(id);
+    if (!reel || reel.status !== 'rejected') return 'Already handled';
+    try {
+      await update(id, { reject_reason: code });
+    } catch (err) {
+      console.error('saving reject reason failed:', err.message);
+      await say('Could not save the reason: the database needs `npm run db:migrate:feedback`.');
+      return 'Not saved';
+    }
+    await store.kvSet('awaiting_note', id);
+    await log('info', 'publisher', `Reject reason for ${label(reel)}: ${REASON_LABEL[code]}`, id);
+    await say(`Noted: ${REASON_LABEL[code]}. Add a line on what was wrong as your next message, or /skip.`);
+    return REASON_LABEL[code];
   }
 
   async function retry(id) {
@@ -395,8 +434,8 @@ export function createPipeline({
     const cq = update_.callback_query;
     if (cq) {
       if (!chatId || String(cq.message?.chat?.id) !== String(chatId)) return;
-      const [action, id] = String(cq.data || '').split(':');
-      const actions = { approve, reject, retry, edit: askForCaption, ttretry: retryTikTok };
+      const [action, id, extra] = String(cq.data || '').split(':');
+      const actions = { approve, reject, retry, edit: askForCaption, ttretry: retryTikTok, why: (x) => rejectReason(x, extra) };
       let answer = 'Unknown action';
       if (actions[action] && id) answer = await actions[action](id);
       try {
@@ -424,7 +463,13 @@ export function createPipeline({
 
     if (text === '/cancel') {
       await store.kvSet('awaiting_caption', '');
+      await store.kvSet('awaiting_note', '');
       await say('Cancelled. The caption is unchanged.');
+      return;
+    }
+    if (text === '/skip') {
+      await store.kvSet('awaiting_note', '');
+      await say('OK, no note.');
       return;
     }
     if (text === '/queue') {
@@ -436,7 +481,21 @@ export function createPipeline({
       return;
     }
     const awaiting = await store.kvGet('awaiting_caption');
-    if (awaiting && !text.startsWith('/')) await replaceCaption(awaiting, msg.text);
+    if (awaiting && !text.startsWith('/')) {
+      await replaceCaption(awaiting, msg.text);
+      return;
+    }
+    const noteFor = await store.kvGet('awaiting_note');
+    if (noteFor && !text.startsWith('/')) {
+      await store.kvSet('awaiting_note', '');
+      try {
+        await update(noteFor, { reject_note: msg.text.slice(0, 500) });
+        await say('Saved. The next reels will take it into account.');
+      } catch (err) {
+        console.error('saving reject note failed:', err.message);
+        await say('Could not save the note: the database needs `npm run db:migrate:feedback`.');
+      }
+    }
   }
 
   return {

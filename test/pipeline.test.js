@@ -300,3 +300,39 @@ test('findCaption reads one entry from the captions log', () => {
   assert.equal(findCaption(md, 4).caption, 'אחר');
   assert.equal(findCaption(md, 7), null);
 });
+
+test('reject asks why; the reason and a note are saved with the reel', async () => {
+  const t = setup();
+  await t.addReel();
+  await t.press('reject');
+  const ask = t.sent.filter((m) => m.method === 'sendMessage').at(-1).payload;
+  const codes = ask.reply_markup.inline_keyboard.flat().map((b) => b.callback_data);
+  assert.ok(codes.includes('why:r1:cringe'));
+  assert.ok(codes.every((c) => Buffer.byteLength(c) <= 64));
+  await t.pipeline.handleTelegramUpdate({ callback_query: { id: 'q', data: 'why:r1:cringe', message: { chat: { id: Number(CHAT) } } } });
+  assert.equal(t.store.reels.get('r1').reject_reason, 'cringe');
+  await t.type('too sweet, nobody talks like that');
+  assert.equal(t.store.reels.get('r1').reject_note, 'too sweet, nobody talks like that');
+  // The next message is not taken as a note.
+  await t.type('hello');
+  assert.equal(t.store.reels.get('r1').reject_note, 'too sweet, nobody talks like that');
+});
+
+test('a reason for a reel that was not rejected is ignored', async () => {
+  const t = setup();
+  await t.addReel();
+  await t.pipeline.handleTelegramUpdate({ callback_query: { id: 'q', data: 'why:r1:boring', message: { chat: { id: Number(CHAT) } } } });
+  assert.equal(t.store.reels.get('r1').reject_reason, undefined);
+  assert.equal(t.status(), 'pending_approval');
+});
+
+test('/skip ends the note prompt without saving anything', async () => {
+  const t = setup();
+  await t.addReel();
+  await t.press('reject');
+  await t.pipeline.handleTelegramUpdate({ callback_query: { id: 'q', data: 'why:r1:target', message: { chat: { id: Number(CHAT) } } } });
+  await t.type('/skip');
+  await t.type('this is not a note');
+  assert.equal(t.store.reels.get('r1').reject_reason, 'target');
+  assert.equal(t.store.reels.get('r1').reject_note, undefined);
+});

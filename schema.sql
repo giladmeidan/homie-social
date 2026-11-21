@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS reels (
   tiktok_publish_id TEXT,
   tiktok_error      TEXT,
   tiktok_updated_at TEXT,
-  beats         TEXT   -- the reel's structure from its episode (durations of hook/buildup/payoff), JSON
+  beats         TEXT,  -- the reel's structure from its episode (durations of hook/buildup/payoff), JSON
+  reject_reason TEXT,  -- target | cringe | boring | looks | fact | other (Telegram buttons after Reject)
+  reject_note   TEXT   -- the owner's one-line note on what was wrong
 );
 
 CREATE INDEX IF NOT EXISTS reels_status ON reels (status);
