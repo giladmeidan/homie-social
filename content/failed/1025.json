@@ -1,7 +1,0 @@
-{
-  "reel": 1025,
-  "name": "reel-h025-city-which-floor-v2",
-  "batch": "h025",
-  "error": "bash build.sh r1025... failed:\ndone r1025 a 198\ndone r1025 b 252\nok r1025\nElevenLabs plan: starter, 39070 characters left, this reel needs about 18\nFAIL voice: lines that don't fit (made clips are cached, only changed lines cost credits):\n  9.80s: 3.04s of speech, room for 2.35s (cut to about 17 characters or drop say): הגג. נוף וקיץ לוהט",
-  "failed_at": "2026-11-21T18:58:08+02:00"
-}

@@ -1,0 +1,29 @@
+{
+  "reel": 1025,
+  "name": "reel-h025-city-which-floor-v2",
+  "batch": "h025",
+  "queued_as": "d7f0d72759da",
+  "length": 15.0,
+  "warnings": [],
+  "beats": {
+    "dur": 15.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        6.6
+      ],
+      [
+        "b",
+        6.6,
+        15.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      14.5
+    ],
+    "stretch": 1.0
+  },
+  "sent_at": "2026-11-21T19:01:51+02:00"
+}
