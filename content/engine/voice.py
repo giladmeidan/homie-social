@@ -34,7 +34,7 @@ from scipy.signal import butter, lfilter
 reel = sys.argv[1]
 # --estimate: check that every line fits using ~10 characters/second, no ElevenLabs call, no credits
 ESTIMATE = '--estimate' in sys.argv[2:]
-CPS = float(os.environ.get('VOICE_CPS', '10'))   # estimate speed; real Hebrew TTS measured ~9.9 chars/s
+CPS = float(os.environ.get('VOICE_CPS', '8'))    # estimate speed; real Hebrew TTS measured ~8 chars/s with pauses (r1023, 21.11)
 MAXF = 1.15 if ESTIMATE else 1.25               # the estimate keeps a margin for the real voice
 SR = 44100
 cfg_path = f'{reel}_voice.json'

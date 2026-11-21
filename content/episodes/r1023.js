@@ -1,12 +1,12 @@
 // Reel H23 (1023) — the city · kinetic type (style B), voiced, Comment: "which floor would you rent?".
 // A line-drawn building; a blue dot climbs the stairwell floor by floor -> four floors, what each one means for the flat
 // (ground, 2nd, 4th without a lift, the roof) -> comment prompt: which floor would you rent? 1/2/3/4.
-const DUR=14.0;
+const DUR=14.4;
 const SCENES=[['a',0,6.6],['b',6.6,DUR]];
 Tt.style.zIndex=50;
 
 /* ---------- timing ---------- */
-const COVER_END=0.4,H0=COVER_END,F0=2.7,FL=1.95,ASK=F0+4*FL,E0=13.5;   // ASK = 10.5
+const COVER_END=0.4,H0=COVER_END,F0=2.7,FL=2.15,ASK=F0+4*FL,E0=13.9;   // ASK = 11.3 (beats widened so the real voice fits)
 const OPTS=[0,2,4,5];                       // levels shown: ground, 2nd, 4th, roof
 /* ---------- the building: levels 0..4 + roof (5). viewBox 600x780 ---------- */
 const LY=l=>l===5?40:620-l*120;             // top y of a level band (roof band 40-140)
@@ -43,7 +43,7 @@ window.COVER={t:0.2,title:'איזו קומה הייתם שוכרים?'};
 
 /* ---------- hook (black): the dot climbs the stairwell, floor counter ---------- */
 bg(INK,0,F0);
-caption(250,['לפני שחותמים,','תספרו מדרגות.'],H0,F0,{say:'לפני שחותמים, תספרו מדרגות.',fs:104,cols:['#fff',NAMEC],fo:.1,sfx:'pop'});
+caption(250,['לפני החוזה,','ספרו מדרגות.'],H0,F0,{say:'לפני החוזה, ספרו מדרגות.',fs:104,cols:['#fff',NAMEC],fo:.1,sfx:'pop'});
 const b1=$(`left:300px;top:640px;width:480px`,buildingSVG('#fff',INK,{w:480}));
 const cnt=$(`left:90px;top:900px;width:200px;text-align:center`,`<div class="w" style="font:600 46px/1 R;color:#aaa">קומה</div><div class="c w" style="font:700 170px/1.1 R;color:#fff">0</div>`);
 at(b1,H0,F0,{anim:'none',fo:.1,up:(l)=>{const lv=Math.min(4,outCubic(seg(l,.1,2.0))*4.2);const [x,y]=dotXY(lv);
@@ -53,8 +53,8 @@ at(cnt,H0,F0,{anim:'none',fo:.1,up:(l)=>{cnt.querySelector('.c').textContent=Mat
 
 /* ---------- four floors (white) ---------- */
 bg('#fff',F0,ASK);
-const FLOORS=[['קרקע.','כל הרחוב בחלון.','קרקע: כל הרחוב בחלון.'],['קומה 2.','בדיוק באמצע.','שתיים: בדיוק באמצע.'],
-  ['קומה 4.','בלי מעלית. עם הקניות.','רביעית, בלי מעלית.'],['הגג.','נוף. ושמש על התקרה.','הגג: נוף. וחם בקיץ.']];
+const FLOORS=[['קרקע.','כל הרחוב בחלון.','קרקע: רחוב בחלון.'],['קומה 2.','בדיוק באמצע.','שתיים: באמצע.'],
+  ['קומה 4.','בלי מעלית. עם הקניות.','רביעית, בלי מעלית.'],['הגג.','נוף. ושמש על התקרה.','הגג: נוף, וחם בקיץ.']];
 const b2=$(`left:250px;top:590px;width:560px`,buildingSVG(INK,'#fff',{w:560}));
 at(b2,F0,ASK,{anim:'none',fo:.12,up:(l,t)=>{
   let i=Math.min(3,Math.floor((t-F0)/FL));const t0=F0+i*FL;
@@ -70,7 +70,7 @@ FLOORS.forEach(([title,sb,say],i)=>{const t0=F0+i*FL;
 
 /* ---------- engagement prompt (Comment, black) ---------- */
 bg(INK,ASK,E0);
-caption(250,['איזו קומה','הייתם שוכרים?'],ASK+.05,E0,{say:'איזו קומה הייתם שוכרים? בתגובות.',fs:110,cols:['#fff',NAMEC],fo:.12,sfx:'whoosh'});
+caption(250,['איזו קומה','הייתם שוכרים?'],ASK+.05,E0,{say:'איזו קומה? בתגובות.',fs:110,cols:['#fff',NAMEC],fo:.12,sfx:'whoosh'});
 const opt=(n,txt)=>`<div style="position:relative;width:760px;height:120px;margin:0 auto;border-radius:60px;background:#fff;direction:rtl">
   <div class="w" style="position:absolute;right:16px;top:17px;width:86px;height:86px;border-radius:50%;background:${BLUE};color:#fff;text-align:center;font:700 54px/86px R">${n}</div>
   <div class="w" style="position:absolute;right:130px;top:0;font:700 56px/120px R;color:${INK}">${txt}</div></div>`;
