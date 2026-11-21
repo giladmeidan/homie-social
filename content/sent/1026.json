@@ -1,0 +1,29 @@
+{
+  "reel": 1026,
+  "name": "reel-h026-turtle-moves-in-a-second",
+  "batch": "h026",
+  "queued_as": "434837e5b266",
+  "length": 11.6,
+  "warnings": [],
+  "beats": {
+    "dur": 11.6,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        5.4
+      ],
+      [
+        "b",
+        5.4,
+        11.6
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      10.8
+    ],
+    "stretch": 1.0
+  },
+  "sent_at": "2026-11-21T20:09:25+02:00"
+}
