@@ -46,7 +46,7 @@ jobs:
         if: inputs.voice_check
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
-          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED }}
+          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED || secrets.ELEVENLABS_LICENSED }}
         run: python3 scripts/elevenlabs-check.py
       - name: Send voice samples to Telegram
         if: inputs.voice_audition != ''
@@ -93,7 +93,7 @@ jobs:
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           ELEVENLABS_VOICE_ID: ${{ vars.ELEVENLABS_VOICE_ID }}
-          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED }}
+          ELEVENLABS_LICENSED: ${{ vars.ELEVENLABS_LICENSED || secrets.ELEVENLABS_LICENSED }}
           VOICE_CACHE: ${{ github.workspace }}/build/voice-cache
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
