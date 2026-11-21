@@ -10,7 +10,7 @@ The Worker only fills reels that have no structure yet, so running this twice is
     DRY_RUN=1 python3 scripts/backfill-beats.py        # print, don't post
 Runs in GitHub Actions from the "Render reels" workflow with "backfill beats" ticked.
 """
-import glob, json, os, re, shutil, sys, urllib.request
+import glob, json, os, re, shutil, sys, urllib.error, urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENGINE = os.path.join(ROOT, 'content', 'engine')
@@ -86,9 +86,14 @@ def main():
         return
     url = os.environ['HOMIE_SOCIAL_URL'].rstrip('/') + '/api/beats'
     req = urllib.request.Request(url, data=json.dumps({'items': out}).encode(), method='POST', headers={
-        'authorization': 'Bearer ' + os.environ['ADMIN_TOKEN'], 'content-type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        res = json.loads(r.read())
+        'authorization': 'Bearer ' + os.environ['ADMIN_TOKEN'], 'content-type': 'application/json',
+        # Cloudflare blocks the default "Python-urllib" user agent with a 403 before the Worker sees it.
+        'user-agent': 'homie-social-backfill/1.0'})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            res = json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        sys.exit(f'POST {url} failed: HTTP {e.code} {e.read()[:300].decode(errors="replace")}')
     print(f"posted {len(out)} reels: {res.get('updated')} updated, {res.get('skipped')} skipped as unreadable; reels that already had a structure are left as they were")
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
