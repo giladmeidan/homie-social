@@ -149,7 +149,9 @@ def build(item):
     cfg_path = os.path.join(work, ep + '_cfg.json')
     dur = json.load(open(cfg_path))['dur'] if os.path.exists(cfg_path) else None
     voiced = os.path.exists(os.path.join(work, ep + '_voice.json'))
-    return out, dur, voiced
+    beats_path = os.path.join(work, ep + '_beats.json')
+    beats = json.load(open(beats_path)) if os.path.exists(beats_path) else None
+    return out, dur, voiced, beats
 
 
 def check(path, dur):
@@ -187,7 +189,7 @@ def check(path, dur):
     return warnings, length
 
 
-def enqueue(item, path):
+def enqueue(item, path, beats=None):
     if DRY_RUN:
         return 'dry-run'
     cap = os.path.join(BUILD, f"{item['episode']}_caption.txt")
@@ -195,6 +197,11 @@ def enqueue(item, path):
         f.write(item['caption'].strip() + '\n')
     cmd = ['node', os.path.join(ROOT, 'scripts', 'enqueue.mjs'), path, '--caption-file', cap,
            '--title', item.get('title') or item['name']]
+    if beats:  # reel structure for the dashboard's retention insight
+        bp = os.path.join(BUILD, f"{item['episode']}_beats.json")
+        with open(bp, 'w') as f:
+            json.dump(beats, f)
+        cmd += ['--beats-file', bp]
     if item.get('at'):
         at = datetime.fromisoformat(item['at'])
         if at.tzinfo is None:
@@ -244,7 +251,7 @@ def main():
             print(f'::group::{label}', flush=True)
             try:
                 validate(item)
-                path, dur, voiced = build(item)
+                path, dur, voiced, beats = build(item)
                 warnings, length = check(path, dur)
                 if item.get('preview'):
                     queued = preview(item, path, manual=True)
@@ -253,10 +260,10 @@ def main():
                     queued = preview(item, path)
                     warnings.append('voiced: preview only (ElevenLabs free plan, not licensed for posting)')
                 else:
-                    queued = enqueue(item, path)
+                    queued = enqueue(item, path, beats)
                 if not DRY_RUN:
                     write_marker(SENT, reel, {'reel': reel, 'name': item['name'], 'batch': batch.get('batch'),
-                                              'queued_as': queued, 'length': round(length, 2), 'warnings': warnings,
+                                              'queued_as': queued, 'length': round(length, 2), 'warnings': warnings, 'beats': beats,
                                               'sent_at': datetime.now(TZ).isoformat(timespec='seconds')})
                     if os.path.exists(marker(FAILED, reel)):
                         os.remove(marker(FAILED, reel))

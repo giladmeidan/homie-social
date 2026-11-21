@@ -3,6 +3,7 @@
 #        python3 render.py r19 --still 3.2 7.9   -> stills/r19_3.2.jpg ...
 import subprocess, json, os, sys
 from playwright.sync_api import sync_playwright
+from beats import write_beats
 FPS=30
 reel=sys.argv[1]; args=sys.argv[2:]
 os.makedirs('scenes',exist_ok=True); os.makedirs('stills',exist_ok=True)
@@ -22,6 +23,7 @@ with sync_playwright() as p:
             pg.evaluate(f"render({float(t)/K})"); pg.screenshot(path=f'stills/{reel}_{t}.jpg',type='jpeg',quality=85)
         b.close(); sys.exit()
     json.dump([dict(e,t=e['t']*K) for e in pg.evaluate("window.EVENTS")],open(f'{reel}_events.json','w'))
+    write_beats(pg,f'{reel}_beats.json')   # hook/buildup/payoff timing for the dashboard's retention insight
     _cfg=pg.evaluate("window.AUDIO||null")
     if _cfg is not None:
         _cfg['dur']=round(_cfg['dur']*K,3)

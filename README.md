@@ -175,7 +175,7 @@ npm run dashboard     # opens it and copies the admin key for the sign-in box
 | Page | What it answers |
 | --- | --- |
 | **Overview** | How is it going? A plain-language summary (views, best reel, watch time, followers, posting pace), one card per platform, total views over time for both, and the top reels of the period. |
-| **Instagram** / **TikTok** | Which reels beat my usual? Views gained, followers, typical reel, engagement, the latest reels against the typical-reel line, views and followers over time, and a searchable, sortable table with a 48-hour trend per reel. |
+| **Instagram** / **TikTok** | Which reels beat my usual? Views gained, followers, typical reel, engagement, the latest reels against the typical-reel line, views and followers over time, and a searchable, sortable table with a 48-hour trend per reel. Instagram also has **Where viewers drop off**: the average reel's retention curve split into hook, buildup and payoff, with the weakest link named (see below). |
 | **Reel page** (click any Instagram reel) | The story of one reel: how its first day compared, reach vs plays, watch time, engagement, rank, views hour by hour, caption. |
 | **System** | Is everything running? Health checks for the scheduler, Instagram stats, the Instagram connection (publishing quota and API budget), TikTok (sign-in, drafts used of 5 per day), Telegram (webhook) and the queue, plus an activity log of approvals, publishes, failures and stats problems. |
 
@@ -183,7 +183,9 @@ npm run dashboard     # opens it and copies the admin key for the sign-in box
 
 **Collection.** Hourly, or on demand with **Refresh**. All posts are read (up to 250 Instagram, 200 TikTok). Instagram reels under 2 days old are measured every hour, up to 14 days every 6 hours, older ones daily. That keeps the run well inside Meta's API budget, which the System page shows. Snapshots and the activity log are kept for 90 days. If Instagram rejects a newer metric name, the collector falls back to the core set (views, reach, likes, comments, shares, saves).
 
-**Upgrading an existing database** (once, before deploying this version): `npm run db:migrate:insights`. It adds first-day views, a running total of views and the activity log, and backfills first-day views from the snapshots already collected.
+**Where viewers drop off (retention).** Instagram's API doesn't share the per-second retention graph (only the app shows it, per reel), so the dashboard estimates the curve of your *average* reel. Inputs per reel: average watch time, skip rate (`reels_skip_rate`, the share of plays gone in the first 3 seconds; empty for low-view reels) and the reel's structure, saved at render time from its episode (`content/engine/beats.py`): **hook** = 0–3 s, **buildup** = 3 s to the first scene change at 4 s or later, **payoff** = from there to the end card, **brand ending** = end card to the end. An episode can set `window.BEATS={payoff:t,outro:t}` (episode time) to say it exactly. The model gives each phase one steady leave rate, shared by all reels, and fits the four rates so every reel's predicted average watch time and 3-second survival match Instagram's numbers (`src/retention.js`). Weakest link: the hook if it loses half the viewers or more; otherwise the phase that loses the largest share of its remaining viewers per second (the brand ending is shown, not judged). Needs 4 reels with watch time and a structure in the selected range; it says "early estimate" under 10. Watch time past a reel's length (replays) is capped. Per-pillar results appear for pillars with 4+ reels. Reels sent before this existed: run the **Render reels** workflow once with **backfill beats** ticked.
+
+**Upgrading an existing database** (once, before deploying this version): `npm run db:migrate:insights`, then `npm run db:migrate:beats` (adds `reels.beats`; run it **before** `npm run deploy`, because the new Worker writes that column). It adds first-day views, a running total of views and the activity log, and backfills first-day views from the snapshots already collected.
 
 ## Development
 
@@ -203,15 +205,19 @@ npm run logs      # live logs from the deployed Worker
 | `src/index.js` | Worker: HTTP routes, media hosting, webhook, cron, dashboard auth |
 | `src/stats.js` | Hourly Instagram stats collection |
 | `src/insights.js` | Typical reel, first-day comparisons, ranges and the plain-language summary |
+| `src/retention.js` | Estimated retention curve: hook / buildup / payoff and the weakest link |
 | `src/health.js` | System page health checks |
 | `src/dashboard.js` | Dashboard pages (server-rendered HTML, no outside scripts) |
 | `scripts/enqueue.mjs` | Queue a reel from your Mac (also used by the workflow) |
 | `scripts/render-batch.py` | Render, check and enqueue the reels in `content/batches/` |
+| `scripts/backfill-beats.py` | Saves the structure of reels sent before it was recorded (workflow: *backfill beats*) |
+| `content/engine/beats.py` | Reads a reel's structure (scenes, end card, stretch) at render time |
 | `scripts/notify-failures.mjs` | Telegram alert when the workflow could not send a reel |
 | `.github/workflows/render-reels.yml` | Runs the above on every pushed batch |
 | `schema.sql` | Database tables |
 | `migrations/001-tiktok.sql` | Adds the TikTok columns to a database made before TikTok |
 | `migrations/002-insights.sql` | Dashboard v2: first-day views, total views, activity log |
+| `migrations/003-beats.sql` | Retention insight: each reel's structure |
 
 ## Not verified yet
 

@@ -109,7 +109,7 @@ function wipe(t0,label){
   const c2=$(`left:440px;top:1400px;width:200px;height:200px;border-radius:50%;background:#fff`);
   at(c2,t0+.7,t0+1.6,{anim:'none',fo:0,sfx:'whoosh2',up:(l)=>{c2.style.transform=`scale(${17*inOut(seg(l,0,.5))})`}});
   return t0+1.2}
-function wordmark(a,b){const m=$(`left:0;top:215px;width:1080px;display:flex;justify-content:center;`,WORDMARK);m.querySelector('svg').style.cssText='width:300px;height:auto;display:block';return at(m,a,b,{dy:-30,s0:.6,dur:.4,fo:0})}
+function wordmark(a,b){(window.MARKS||=[]).push(['wordmark',a]);const m=$(`left:0;top:215px;width:1080px;display:flex;justify-content:center;`,WORDMARK);m.querySelector('svg').style.cssText='width:300px;height:auto;display:block';return at(m,a,b,{dy:-30,s0:.6,dur:.4,fo:0})}
 const person=(cx,cy,r,fill)=>`<circle cx="${cx}" cy="${cy-r*.9}" r="${r*.55}" fill="${fill}"/><path d="M${cx-r} ${cy+r*.9} Q${cx-r} ${cy-r*.05} ${cx} ${cy-r*.05} Q${cx+r} ${cy-r*.05} ${cx+r} ${cy+r*.9} Z" fill="${fill}"/>`;
 const FEAT={};
 function feat(a,b,html,up){const el=$('left:0;top:380px;width:1080px;height:900px;',html);ev(a,'pop2');return at(el,a,b,{dy:90,s0:.92,dur:.4,up:up?(l)=>up(l,el):null})}
@@ -146,7 +146,7 @@ FEAT.mutual=(a,b)=>{ev(a+.75,'ding',1.1);ev(a+1.0,'pop');
    el.querySelector('.hR').setAttribute('transform',`translate(${470-k*144} ${110}) scale(${1-.2*seg(l,.75,.1)})`);el.querySelector('.hL').setAttribute('transform',`translate(${186+k*144} ${110}) scale(${1-.2*seg(l,.75,.1)})`);
    const c=seg(l,.8,.2);el.querySelector('.hR').setAttribute('opacity',1-c);el.querySelector('.hL').setAttribute('opacity',1-c);const ch=el.querySelector('.chat');ch.setAttribute('opacity',c);ch.setAttribute('transform',`translate(350 162) scale(${.4+.6*outBack(c)}) translate(-350 -162)`)})};
 FEAT.free=(a,b)=>feat(a,b,`<div style="position:absolute;left:390px;top:10px;width:300px;height:300px;border-radius:50%;background:${BLUE};color:#fff;text-align:center;font:700 130px/300px R;direction:ltr;unicode-bidi:isolate">₪0</div>${hl(370,'וחינם.')}${sub(540,'לשני הצדדים.')}`);
-function endCard(a,b,tag='בכל הארץ'){const el=$('left:0;top:360px;width:1080px;height:900px;',`${hl(0,'הצטרפו',BLUE,150)}${hl(165,'לרשימת ההמתנה.',INK,108)}
+function endCard(a,b,tag='בכל הארץ'){(window.MARKS||=[]).push(['endCard',a]);const el=$('left:0;top:360px;width:1080px;height:900px;',`${hl(0,'הצטרפו',BLUE,150)}${hl(165,'לרשימת ההמתנה.',INK,108)}
  <div style="position:absolute;left:190px;top:390px;width:700px;height:130px;border-radius:65px;background:${INK};color:#fff;font:700 54px/130px R;text-align:center">הקישור בביו</div>${sub(580,tag)}`);
  ev(a,'pop2');ev(a+.5,'ding',1.3);ev(a+.15,'boing');ev(a+.75,'boing');
  const conf=[];const rc=rng(5);for(let i=0;i<12;i++){const c=[INK,BLUE,BLUSH,'#9DBBFF'][i%4];const d=$(`left:0;top:0;width:${14+rc()*14}px;height:${24+rc()*20}px;border-radius:4px;background:${c}`);conf.push({d,a:rc()*Math.PI-Math.PI,v:380+rc()*520,spin:rc()*900-450});at(d,a+.1,a+1.7,{anim:'none',fo:0})}

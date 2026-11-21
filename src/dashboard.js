@@ -46,6 +46,8 @@ export const GLOSSARY = {
   followers: ['Followers', 'Accounts following you, with the change over the selected period.'],
   posted: ['Reels posted', 'Reels published during the selected period.'],
   trend: ['48h trend', 'Views over the last 48 hours, one point per hourly measurement.'],
+  skip: ['Skip rate', 'Share of plays that left within the first 3 seconds, as Instagram measures it. Lower is better: it is the hook’s report card. Instagram leaves it empty for reels with too few views.'],
+  retention: ['Retention curve', 'Of everyone who started a reel, the share still watching at each second. Estimated for your average reel from each reel’s average watch time, skip rate and structure (when the payoff and the ending start); Instagram does not share its own per-second graph outside the app.'],
 };
 const info = (key) =>
   GLOSSARY[key] ? `<span class="info" tabindex="0" role="note" aria-label="${esc(GLOSSARY[key][1])}" data-tip="${esc(GLOSSARY[key][1])}">i</span>` : '';
@@ -155,6 +157,19 @@ tbody tr:hover{background:var(--surface-2)}
 .spark path{fill:none;stroke:var(--text-muted);stroke-width:1.5}
 .spark circle{fill:var(--ig)}
 .empty{color:var(--text-muted);padding:14px 0}
+.ret-band{opacity:.07}.ret-band.weak{fill:var(--warning);opacity:.2}
+.ret-line{fill:none;stroke:var(--ig);stroke-width:2.5}
+.ret-area{fill:var(--ig);opacity:.08}
+.ret-name{font-size:12px;font-weight:600;fill:var(--text-secondary)}
+.ret-name.weak{fill:var(--warning-ink)}
+.ret-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px}
+.ret-tile{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.ret-tile.weak{border-color:color-mix(in srgb,var(--warning) 70%,var(--line));background:color-mix(in srgb,var(--warning) 9%,var(--surface-1))}
+.ret-tile .l{font-size:12.5px;color:var(--text-secondary);display:flex;justify-content:space-between;gap:6px}
+.ret-tile .v{font-size:22px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.ret-tile .n{font-size:12px;color:var(--text-muted)}
+.ret-verdict{font-size:14.5px;margin:4px 0 12px}
+.ret-foot{font-size:12px;color:var(--text-muted);margin-top:12px}
 .notice{border-left:3px solid var(--warning);padding:9px 12px;margin-bottom:14px;background:var(--surface-1);border-radius:6px;font-size:13px}
 .notice.err{border-left-color:var(--critical)}
 .health-pill{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-size:13px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface-1)}
@@ -204,7 +219,7 @@ const SCRIPT = `
   };
   const hide = () => { tip.style.display = 'none'; };
   document.addEventListener('mousemove', (e) => {
-    if (e.target.closest('svg[data-series]')) return;
+    if (e.target.closest('svg[data-series],svg[data-retention]')) return;
     const t = e.target.closest('[data-tip]');
     t ? show(t.getAttribute('data-tip'), e.clientX, e.clientY) : hide();
   });
@@ -241,6 +256,26 @@ const SCRIPT = `
       show(label + '\\n' + lines.join('\\n'), e.clientX, e.clientY);
     });
     svg.addEventListener('mouseleave', () => { cross.style.visibility = 'hidden'; marks.forEach((m) => m.style.visibility = 'hidden'); hide(); });
+  });
+
+  // Retention curve: share still watching at the hovered second, and the phase.
+  document.querySelectorAll('svg[data-retention]').forEach((svg) => {
+    const d = JSON.parse(svg.dataset.retention);
+    const cross = svg.querySelector('.cross'), mark = svg.querySelector('.mark');
+    svg.addEventListener('mousemove', (e) => {
+      const r = svg.getBoundingClientRect();
+      const vx = ((e.clientX - r.left) / r.width) * d.w;
+      const t = ((vx - d.l) / (d.w - d.l - d.r)) * d.dur;
+      if (t < 0 || t > d.dur) { cross.style.visibility = mark.style.visibility = 'hidden'; hide(); return; }
+      let best = d.pts[0];
+      for (const p of d.pts) if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p;
+      const x = d.l + (best[0] / d.dur) * (d.w - d.l - d.r), y = d.top + (1 - best[1]) * (d.h - d.top - d.b);
+      cross.setAttribute('x1', x); cross.setAttribute('x2', x); cross.style.visibility = 'visible';
+      mark.setAttribute('cx', x); mark.setAttribute('cy', y); mark.style.visibility = 'visible';
+      const ph = d.phases.find((p) => best[0] >= p[1] && best[0] <= p[2]) || d.phases.at(-1);
+      show(best[0].toFixed(1) + 's · ' + ph[0] + '\n' + Math.round(best[1] * 100) + '% still watching', e.clientX, e.clientY);
+    });
+    svg.addEventListener('mouseleave', () => { cross.style.visibility = mark.style.visibility = 'hidden'; hide(); });
   });
 
   // Sortable tables.
@@ -434,7 +469,7 @@ function reelTable(p, { id, nowMs }) {
   if (!rows.length) return `<div class="empty">No ${ig ? 'reels' : 'videos'} found yet.</div>`;
   const cols = ig
     ? [['Reel', 'text', null], ['Views', 'num', 'views'], ['First day', 'num', 'day1'], ['vs typical', 'num', 'vs'], ['Reach', 'num', 'reach'],
-      ['Engagement', 'num', 'engagement'], ['Avg watch', 'num', 'watch'], ['48h trend', 'num', 'trend']]
+      ['Engagement', 'num', 'engagement'], ['Avg watch', 'num', 'watch'], ['Skip rate', 'num', 'skip'], ['48h trend', 'num', 'trend']]
     : [['Video', 'text', null], ['Views', 'num', 'views'], ['First day', 'num', 'day1'], ['vs typical', 'num', 'vs'], ['Likes', 'num', null],
       ['Comments', 'num', null], ['Shares', 'num', null], ['Engagement', 'num', 'engagement']];
   const head = cols.map(([label, type, key]) => `<th tabindex="0" data-type="${type}" scope="col">${label}${key ? ' ' + info(key) : ''}</th>`).join('');
@@ -452,6 +487,7 @@ function reelTable(p, { id, nowMs }) {
           `<td data-v="${r.reach ?? ''}">${num(r.reach)}</td>`,
           `<td data-v="${r.engagement ?? ''}">${pct(r.engagement)}</td>`,
           `<td data-v="${r.avgWatchS ?? ''}">${secs(r.avgWatchS)}</td>`,
+          `<td data-v="${r.skipRate ?? ''}">${pct(r.skipRate)}</td>`,
           `<td data-v="${r.spark ? r.spark.at(-1) - r.spark[0] : ''}">${sparkline(r.spark)}</td>`,
         ]
         : [
@@ -504,6 +540,109 @@ function platformCard(p, range) {
 <div class="pstat"><div class="l">Typical reel ${info('typical')}</div><div class="v">${p.typical === null ? '–' : num(p.typical)}</div><div class="note muted">${p.typical === null ? 'needs 3 reels a day old' : 'first-day views'}</div></div>
 <div class="pstat"><div class="l">Engagement ${info('engagement')}</div><div class="v">${pct(p.engagement)}</div><div class="note muted">${p.posted} posted in ${esc(r.short)}</div></div>
 </div></div>`;
+}
+
+
+// ---------------- retention: hook / buildup / payoff ----------------
+
+const PHASE_LABEL = { hook: 'Hook', buildup: 'Buildup', payoff: 'Payoff', ending: 'Brand ending' };
+const PHASE_HINT = {
+  hook: 'First 3 seconds: the opening line or image that stops the scroll.',
+  buildup: 'From second 3 to the turn: the setup, the problem, the list.',
+  payoff: 'From the turn to the brand ending: the punchline or answer, and the comment / share / save prompt.',
+  ending: 'End card or wordmark. People are expected to leave here; it is shown, not judged.',
+};
+const FIX = {
+  hook: 'Open on the most surprising frame or line, with words on screen in the first half second; no logo or slow fade first.',
+  buildup: 'Cut beats from the middle: shorter setup, one idea, reach the turn sooner. If the reel needs more, it is two reels.',
+  payoff: 'Land the punchline faster after the turn and put the engagement prompt right on it; nothing between the joke and the ask.',
+};
+const p0 = (v) => `${Math.round(v * 100)}%`;
+
+function retentionChart(ret, { w = 760, h = 250 } = {}) {
+  const l = 44, r = 12, top = 26, b = 28;
+  const { ph, curve, weakest } = ret;
+  const X = (t) => l + (t / ph.dur) * (w - l - r);
+  const Y = (v) => top + (1 - v) * (h - top - b);
+  const bands = ret.phases.filter((p) => p.seconds > 0.05).map((p) => {
+    const weak = weakest && p.name === weakest.name;
+    const x0 = X(p.from), x1 = X(p.to), mid = (x0 + x1) / 2;
+    const label = x1 - x0 > 56 ? PHASE_LABEL[p.name] : x1 - x0 > 30 ? PHASE_LABEL[p.name].slice(0, 4) + '.' : '';
+    return `<rect class="ret-band${weak ? ' weak' : ''}" x="${x0.toFixed(1)}" y="${top}" width="${(x1 - x0).toFixed(1)}" height="${h - top - b}" style="fill:${weak ? '' : 'var(--text-muted)'}"></rect>
+<line class="grid-line" x1="${x0.toFixed(1)}" x2="${x0.toFixed(1)}" y1="${top - 4}" y2="${h - b}"></line>
+<text class="ret-name${weak ? ' weak' : ''}" x="${mid.toFixed(1)}" y="${top - 9}" text-anchor="middle">${esc(label)}</text>`;
+  }).join('');
+  const grid = [0, 0.5, 1].map((v) => `<line class="grid-line" x1="${l}" x2="${w - r}" y1="${Y(v)}" y2="${Y(v)}"></line><text x="${l - 8}" y="${Y(v) + 4}" text-anchor="end">${v * 100}%</text>`).join('');
+  const ticks = [...new Set([0, ...ret.phases.map((p) => p.to)].map((t) => Math.round(t * 10) / 10))]
+    .map((t) => `<text x="${X(t).toFixed(1)}" y="${h - 8}" text-anchor="middle">${t}s</text>`).join('');
+  const d = curve.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.s).toFixed(1)}`).join('');
+  const area = `${d}L${X(ph.dur).toFixed(1)},${Y(0)}L${X(0)},${Y(0)}Z`;
+  const data = {
+    w, h, l, r, top, b, dur: ph.dur,
+    pts: curve.map((p) => [Math.round(p.t * 100) / 100, Math.round(p.s * 1000) / 1000]),
+    phases: ret.phases.map((p) => [PHASE_LABEL[p.name], p.from, p.to]),
+  };
+  const desc = ret.phases.map((p) => `${PHASE_LABEL[p.name]} ${p0(p.start)} to ${p0(p.end)}`).join(', ');
+  return `<div class="chart"><svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Estimated retention of the average reel: ${esc(desc)}" data-retention='${esc(JSON.stringify(data))}'>
+${bands}${grid}${ticks}<path class="ret-area" d="${area}"></path><path class="ret-line" d="${d}"></path>
+<line class="cross" x1="0" x2="0" y1="${top}" y2="${h - b}"></line><circle class="mark" r="4.5" style="fill:var(--ig)"></circle></svg></div>`;
+}
+
+function retentionVerdict(ret) {
+  const w = ret.weakest;
+  if (!w) return '';
+  const by = Object.fromEntries(ret.phases.map((p) => [p.name, p]));
+  const p = by[w.name];
+  const why = w.reason === 'hook-half'
+    ? `${p0(p.lost)} of viewers are gone within 3 seconds, so more than half never see the buildup.`
+    : `It sheds ${p0(p.perSecond)} of the remaining viewers every second${
+      w.name !== 'hook' ? `, against ${p0(by[w.name === 'buildup' ? 'payoff' : 'buildup'].perSecond)} in the ${w.name === 'buildup' ? 'payoff' : 'buildup'}` : ''
+    }.`;
+  const tie = w.tie ? ` The ${PHASE_LABEL[w.tie].toLowerCase()} is close behind, so treat both as weak.` : '';
+  return `<p class="ret-verdict"><strong>Weakest link: ${esc(PHASE_LABEL[w.name].toLowerCase())}.</strong> ${esc(why)}${esc(tie)}<br><span class="muted">Try: ${esc(FIX[w.name])}</span></p>`;
+}
+
+function retentionTiles(ret) {
+  return `<div class="ret-tiles">${ret.phases.map((p) => {
+    const weak = ret.weakest && p.name === ret.weakest.name;
+    const main = p.name === 'hook' ? `${p0(p.lost)} leave` : `${p0(p.perSecond)} / s`;
+    const note = p.name === 'hook'
+      ? `${ret.measuredSkip !== null ? `Instagram skip rate ${p0(ret.measuredSkip)} (${ret.skipReels} reels)` : 'no skip rate from Instagram yet'}`
+      : `${p.seconds.toFixed(1)}s long · loses ${p0(p.lostOfPresent)} of who reaches it`;
+    return `<div class="ret-tile${weak ? ' weak' : ''}" data-tip="${esc(PHASE_HINT[p.name])}"><div class="l"><span>${esc(PHASE_LABEL[p.name])}</span>${weak ? '<span>weakest</span>' : `<span>${p0(p.end)} left</span>`}</div>
+<div class="v">${main}</div><div class="n">${esc(note)}</div></div>`;
+  }).join('')}</div>`;
+}
+
+function retentionGroups(ret) {
+  if (!ret.byGroup?.length) return '';
+  const head = '<tr><th>Pillar</th><th>Reels</th><th>Hook: leave in 3s</th><th>Buildup / s</th><th>Payoff / s</th><th>Weakest</th></tr>';
+  const rows = ret.byGroup.map((g) => {
+    const by = Object.fromEntries(g.phases.map((p) => [p.name, p]));
+    return `<tr><td dir="auto">${esc(g.group)}</td><td>${g.reels}</td><td>${p0(by.hook.lost)}</td><td>${p0(by.buildup.perSecond)}</td><td>${p0(by.payoff.perSecond)}</td><td>${g.weakest ? esc(PHASE_LABEL[g.weakest.name]) : '–'}</td></tr>`;
+  }).join('');
+  return `<details style="margin-top:12px"><summary class="sub" style="cursor:pointer">By pillar (pillars with ${ret.minReels}+ reels)</summary>
+<div class="table-wrap" style="margin-top:8px"><table><thead>${head}</thead><tbody>${rows}</tbody></table></div></details>`;
+}
+
+function retentionCard(ret, range) {
+  const head = `<div class="card-head"><div><h2>Where viewers drop off ${info('retention')}</h2><div class="sub">Estimated retention of your average reel, split into hook, buildup and payoff · hover the curve</div></div></div>`;
+  if (!ret || !ret.ready) {
+    const n = ret?.reels ?? 0;
+    const why = ret?.missingBeats
+      ? ` ${ret.missingBeats} reel${ret.missingBeats === 1 ? ' has' : 's have'} watch time but no saved structure yet: run the render workflow once with “backfill beats”.`
+      : '';
+    return `<section class="card" id="retention">${head}<div class="empty">Needs ${ret?.minReels ?? 4} reels with watch time and a saved structure in this period; ${n} so far.${
+      range !== 'all' && range !== '30d' ? ' Try the 30-day range.' : ''}${esc(why)}</div></section>`;
+  }
+  const notes = [
+    `Estimated from ${ret.reels} reels; median length ${ret.ph.dur.toFixed(1)}s.`,
+    `Model check: it predicts each reel’s average watch time within ${ret.fitErrorS.toFixed(1)}s (median).`,
+    ret.replayed ? `${ret.replayed} reel${ret.replayed === 1 ? ' was' : 's were'} watched longer than its length (replays); capped at its length.` : '',
+    ret.solid ? '' : `Early estimate: it settles after about 10 reels.`,
+  ].filter(Boolean).join(' ');
+  return `<section class="card" id="retention">${head}${retentionVerdict(ret)}${retentionChart(ret)}${retentionTiles(ret)}${retentionGroups(ret)}
+<div class="ret-foot">${esc(notes)} Instagram doesn’t share its per-second retention graph through the API, so this curve is fitted to each reel’s average watch time and skip rate. Compare it with the Retention chart in the Instagram app for one reel to sanity-check it.</div></section>`;
 }
 
 // ---------------- pages ----------------
@@ -590,6 +729,7 @@ ${timeChart([{ name: 'Views', cls, pts: p.timeline }], { ariaLabel: 'Total views
 <div class="card-head" style="margin-top:16px"><div><h2>Followers</h2></div></div>
 ${timeChart([{ name: 'Followers', cls, pts: p.followerSeries.map((x) => ({ at: x.at, v: x.v })) }], { h: 140, ariaLabel: 'Followers over time', emptyText: 'Follower history fills in hourly.' })}</div>
 </section>
+${ig ? retentionCard(p.retention, range) : ''}
 <section class="card"><div class="card-head"><div><h2>All ${ig ? 'reels' : 'videos'}</h2></div></div>${reelTable(p, { id: `${cls}-table`, nowMs })}</section>
 ${glossary()}
 </div>`,
@@ -609,11 +749,14 @@ export function renderReel({ d, health, notice, tiktokEnabled, timeZone, nowMs =
     story.push(`${num(m.reach)} different accounts saw it ${num(m.views)} times (${(m.views / m.reach).toFixed(1)} plays per account).`);
   }
   if (typeof m.ig_reels_avg_watch_time === 'number') story.push(`People watched it for ${(m.ig_reels_avg_watch_time / 1000).toFixed(1)} seconds on average.`);
+  const skipShare = typeof m.reels_skip_rate === 'number' ? (m.reels_skip_rate > 1 ? m.reels_skip_rate / 100 : m.reels_skip_rate) : null;
+  if (skipShare !== null) story.push(`${pct(skipShare)} of plays left in the first 3 seconds (skip rate), so the hook kept ${pct(1 - skipShare)}.`);
   if (m.reach) story.push(`${num(interactions)} interactions from ${num(m.reach)} accounts reached: ${pct(interactions / m.reach)} engagement.`);
   if (d.rank) story.push(`Ranks #${d.rank} of ${d.of} reels by total views.`);
   const tiles = [
     ['Views', m.views, 'views'], ['Reach', m.reach, 'reach'], ['First-day views', d.day1, 'day1'], ['Likes', m.likes], ['Comments', m.comments],
     ['Shares', m.shares], ['Saves', m.saved], ['Avg watch', typeof m.ig_reels_avg_watch_time === 'number' ? secs(m.ig_reels_avg_watch_time / 1000) : '–', 'watch'],
+    ['Skip rate', pct(skipShare), 'skip'],
   ];
   return layout({
     title: `homie-social · ${d.label}`,

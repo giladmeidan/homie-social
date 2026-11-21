@@ -3,6 +3,7 @@
 // No platform calls here, only the store, so it is fully testable.
 
 import { reelLabel, sumKnown } from './stats.js';
+import { retention, sampleOf, groupOf } from './retention.js';
 
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
@@ -94,6 +95,9 @@ export async function igData(store, { now = () => new Date(), range = DEFAULT_RA
       engagement: typeof interactions === 'number' && m.reach ? interactions / m.reach : null,
       avgWatchS: typeof m.ig_reels_avg_watch_time === 'number' ? m.ig_reels_avg_watch_time / 1000 : null,
       day1: typeof x.day1_views === 'number' ? x.day1_views : null,
+      skipRate: typeof m.reels_skip_rate === 'number' ? (m.reels_skip_rate > 1 ? m.reels_skip_rate / 100 : m.reels_skip_rate) : null,
+      beats: x.beats || null,
+      group: groupOf(x.title),
     };
   });
 
@@ -140,6 +144,8 @@ export async function igData(store, { now = () => new Date(), range = DEFAULT_RA
   let summary = null;
   try { summary = lastRun ? JSON.parse(lastRun) : null; } catch { summary = null; }
 
+  const ret = await cachedRetention(store, inRange);
+
   return {
     platform: 'instagram',
     username: account?.username || null,
@@ -164,9 +170,29 @@ export async function igData(store, { now = () => new Date(), range = DEFAULT_RA
     rows,
     inRange,
     timeline,
+    retention: ret,
     lastRun: summary,
     lastError: lastError || null,
   };
+}
+
+// The retention fit costs a few milliseconds; stats only change hourly, so the result is kept
+// in kv by a signature of its inputs (the last few ranges).
+const RET_CACHE = 'retention_cache';
+async function cachedRetention(store, rows) {
+  const sig = rows
+    .map(sampleOf)
+    .filter(Boolean)
+    .map((s) => `${s.id}:${s.watch.toFixed(2)}:${s.skip === null ? '-' : s.skip.toFixed(3)}:${s.ph.dur}:${s.ph.payoff}:${s.ph.outro}:${s.group || ''}:${Math.round(s.weight * 100)}`)
+    .join('|');
+  let cache = [];
+  try { cache = JSON.parse((await store.kvGet(RET_CACHE)) || '[]'); } catch { cache = []; }
+  if (!Array.isArray(cache)) cache = [];
+  const hit = cache.find((c) => c.sig === sig);
+  if (hit) return hit.r;
+  const r = retention(rows);
+  try { await store.kvSet(RET_CACHE, JSON.stringify([{ sig, r }, ...cache].slice(0, 4))); } catch { /* cache is optional */ }
+  return r;
 }
 
 // ---------------- TikTok ----------------
@@ -313,6 +339,22 @@ export function findings({ ig, tt, range }) {
         longest ? ` Longest hold: ${quote(longest.label)} at ${longest.avgWatchS.toFixed(1)}s.` : ''
       }`,
       href: longest ? `/dashboard/reel/${longest.id}` : null,
+    });
+  }
+
+  // 3b. Weakest link of the average reel (estimated retention curve)
+  const ret = ig?.retention;
+  if (ret?.ready && ret.weakest) {
+    const P = { hook: 'the hook (first 3 s)', buildup: 'the buildup', payoff: 'the payoff' };
+    const ph = Object.fromEntries(ret.phases.map((p) => [p.name, p]));
+    const w = ph[ret.weakest.name];
+    const detail = ret.weakest.reason === 'hook-half'
+      ? `${Math.round(w.lost * 100)}% of viewers leave in the first 3 seconds`
+      : `it loses ${Math.round(w.perSecond * 100)}% of the remaining viewers every second`;
+    out.push({
+      tone: 'watch',
+      text: `Weakest link on Instagram: ${P[ret.weakest.name]}, ${detail}${ret.weakest.tie ? ` (${P[ret.weakest.tie]} is close behind)` : ''}. Estimated from ${ret.reels} reels.`,
+      href: '/dashboard/instagram#retention',
     });
   }
 

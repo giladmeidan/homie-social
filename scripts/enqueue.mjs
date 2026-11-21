@@ -5,6 +5,7 @@
 //   npm run enqueue -- path/to/reel.mp4 --caption-file caption.txt --title "Turtle ep 3"
 //   npm run enqueue -- path/to/reel.mp4 --reel 44 --at "2026-11-21 19:00"
 //   npm run enqueue -- path/to/reel.mp4 --reel 44 --no-tiktok     (Instagram only)
+//   ... --beats-file build/r1020_beats.json   (reel structure for the dashboard's retention insight; render-batch adds it)
 //
 // --reel N reads the caption from captions-log.md (CAPTIONS_LOG in .env).
 // --at is in this computer's local time. Without it the reel publishes right after approval.
@@ -55,6 +56,11 @@ if (args.at) {
   scheduledAt = d.toISOString();
 }
 
+let beats;
+if (args['beats-file']) {
+  try { beats = JSON.parse(readFileSync(args['beats-file'], 'utf8')); } catch (e) { console.warn(`Ignoring --beats-file: ${e.message}`); }
+}
+
 const size = statSync(video).size;
 const base = env.HOMIE_SOCIAL_URL.replace(/\/$/, '');
 const headers = { authorization: `Bearer ${env.ADMIN_TOKEN}` };
@@ -66,6 +72,7 @@ const created = await fetch(`${base}/api/reels`, {
     caption: caption.trim(),
     title,
     scheduled_at: scheduledAt,
+    ...(beats ? { beats } : {}),
     ...(args['no-tiktok'] ? { tiktok: false } : {}),
   }),
 });

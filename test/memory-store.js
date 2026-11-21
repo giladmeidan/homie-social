@@ -39,6 +39,13 @@ export function createMemoryStore() {
     async listReels() {
       return [...reels.values()].map((r) => ({ ...r }));
     },
+    async setBeats({ id, title }, beats) {
+      let n = 0;
+      for (const r of reels.values()) {
+        if ((id ? r.id === id : r.title === title) && r.beats == null) { r.beats = beats; n++; }
+      }
+      return n;
+    },
     async kvGet(key) {
       return kv.has(key) ? kv.get(key) : null;
     },

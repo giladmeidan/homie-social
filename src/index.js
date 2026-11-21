@@ -294,6 +294,28 @@ async function serveMedia(request, env, key) {
   return new Response(obj.body, { headers });
 }
 
+// A reel's structure from its episode (see content/engine/beats.py), stored as JSON. Anything odd -> null.
+function cleanBeats(b) {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return null;
+  const n = (v) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v < 600 ? Math.round(v * 1000) / 1000 : null);
+  const dur = n(b.dur);
+  if (!dur) return null;
+  const out = {
+    dur,
+    scenes: (Array.isArray(b.scenes) ? b.scenes : []).slice(0, 20)
+      .filter((x) => Array.isArray(x) && n(x[1]) !== null && n(x[2]) !== null)
+      .map((x) => [String(x[0]).slice(0, 20), n(x[1]), n(x[2])]),
+    endcard: n(b.endcard),
+    wordmarks: (Array.isArray(b.wordmarks) ? b.wordmarks : []).map(n).filter((x) => x !== null).slice(0, 10),
+    stretch: n(b.stretch),
+  };
+  if (b.declared && typeof b.declared === 'object') {
+    const d = { payoff: n(b.declared.payoff), outro: n(b.declared.outro) };
+    if (d.payoff !== null || d.outro !== null) out.declared = d;
+  }
+  return JSON.stringify(out);
+}
+
 async function handleApi(request, env, url) {
   const auth = request.headers.get('authorization') || '';
   if (!(await secretsMatch(auth.replace(/^Bearer\s+/i, ''), env.ADMIN_TOKEN))) {
@@ -315,8 +337,10 @@ async function handleApi(request, env, url) {
       if (Number.isNaN(d.getTime())) return json({ error: 'scheduled_at is not a valid date' }, 400);
       scheduledAt = d.toISOString();
     }
+    const beats = cleanBeats(body.beats);
     const id = randomHex(6);
     await store.createReel({
+      beats,
       tiktok_status: body.tiktok === false ? 'off' : null,
       id,
       status: 'uploading',
@@ -327,6 +351,23 @@ async function handleApi(request, env, url) {
       created_at: new Date().toISOString(),
     });
     return json({ id, upload_path: `/api/reels/${id}/video` }, 201);
+  }
+
+  // Backfill of reel structure for reels sent before it was recorded: { items: [{ id?, title?, beats }] }.
+  if (request.method === 'POST' && url.pathname === '/api/beats') {
+    const body = await request.json().catch(() => null);
+    const items = Array.isArray(body?.items) ? body.items.slice(0, 500) : null;
+    if (!items) return json({ error: 'items is required' }, 400);
+    let updated = 0;
+    let skipped = 0;
+    for (const it of items) {
+      const beats = cleanBeats(it?.beats);
+      const id = typeof it?.id === 'string' && /^[a-f0-9]{6,32}$/.test(it.id) ? it.id : null;
+      const title = typeof it?.title === 'string' && it.title ? it.title.slice(0, 200) : null;
+      if ((!id && !title) || !beats) { skipped++; continue; }
+      updated += await store.setBeats({ id, title }, beats);
+    }
+    return json({ updated, skipped });
   }
 
   // Step 2: the raw mp4 as the request body. Triggers the Telegram approval message.

@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS reels (
   tiktok_status     TEXT,
   tiktok_publish_id TEXT,
   tiktok_error      TEXT,
-  tiktok_updated_at TEXT
+  tiktok_updated_at TEXT,
+  beats         TEXT   -- the reel's structure from its episode (durations of hook/buildup/payoff), JSON
 );
 
 CREATE INDEX IF NOT EXISTS reels_status ON reels (status);

@@ -3,7 +3,7 @@
 const COLUMNS = [
   'status', 'title', 'caption', 'media_key', 'scheduled_at', 'approved_at', 'published_at',
   'container_id', 'ig_media_id', 'permalink', 'error', 'tg_message_id', 'updated_at',
-  'tiktok_status', 'tiktok_publish_id', 'tiktok_error', 'tiktok_updated_at',
+  'tiktok_status', 'tiktok_publish_id', 'tiktok_error', 'tiktok_updated_at', 'beats',
 ];
 const ACTIVE = ['approved', 'creating', 'processing', 'publishing'];
 const TIKTOK_ACTIVE = ['queued', 'uploading', 'processing'];
@@ -16,14 +16,21 @@ function setClause(fields) {
 export function createD1Store(db) {
   return {
     async createReel(r) {
-      await db
+      const insert = (withBeats) => db
         .prepare(
-          `INSERT INTO reels (id, status, title, caption, media_key, scheduled_at, created_at, updated_at, tiktok_status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO reels (id, status, title, caption, media_key, scheduled_at, created_at, updated_at, tiktok_status${withBeats ? ', beats' : ''})
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?${withBeats ? ', ?' : ''})`,
         )
         .bind(r.id, r.status, r.title ?? null, r.caption, r.media_key, r.scheduled_at ?? null, r.created_at, r.created_at,
-          r.tiktok_status ?? null)
+          r.tiktok_status ?? null, ...(withBeats ? [r.beats ?? null] : []))
         .run();
+      try {
+        await insert(true);
+      } catch (e) {
+        // Database not migrated yet (npm run db:migrate:beats): never block publishing over the retention insight.
+        if (!/beats/.test(String(e?.message))) throw e;
+        await insert(false);
+      }
     },
     getReel(id) {
       return db.prepare('SELECT * FROM reels WHERE id = ?').bind(id).first();
@@ -233,9 +240,9 @@ export function createD1Store(db) {
     },
     // Latest snapshot per reel, newest reel first; titles from the publisher where it posted the reel.
     async latestReelStats() {
-      const { results } = await db
+      const q = (beatsCol) => db
         .prepare(
-          `SELECT m.id, m.caption, m.permalink, m.timestamp, m.thumbnail_url, m.day1_views, s.metrics, s.captured_at, r.title
+          `SELECT m.id, m.caption, m.permalink, m.timestamp, m.thumbnail_url, m.day1_views, s.metrics, s.captured_at, r.title, ${beatsCol} AS beats
            FROM ig_media m
            LEFT JOIN (
              SELECT media_id, metrics, MAX(captured_at) AS captured_at FROM media_stats GROUP BY media_id
@@ -245,7 +252,19 @@ export function createD1Store(db) {
            ORDER BY m.timestamp DESC`,
         )
         .all();
-      return results;
+      try {
+        return (await q('r.beats')).results;
+      } catch (e) {
+        if (!/beats/.test(String(e?.message))) throw e;
+        return (await q('NULL')).results; // not migrated yet
+      }
+    },
+    // Backfill of reel structure (beats) for reels sent before it was recorded. Never overwrites.
+    async setBeats({ id, title }, beats) {
+      const res = id
+        ? await db.prepare('UPDATE reels SET beats = ? WHERE id = ? AND beats IS NULL').bind(beats, id).run()
+        : await db.prepare('UPDATE reels SET beats = ? WHERE title = ? AND beats IS NULL').bind(beats, title).run();
+      return res.meta?.changes ?? 0;
     },
     latestAccountStats() {
       return db.prepare('SELECT * FROM account_stats ORDER BY captured_at DESC LIMIT 1').first();

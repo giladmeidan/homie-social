@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectStats, maybeCollectStats, parseInsights, reelLabel, CORE_METRICS } from '../src/stats.js';
+import { collectStats, maybeCollectStats, parseInsights, reelLabel, CORE_METRICS, REEL_METRICS, EXTRA_METRICS } from '../src/stats.js';
 import { renderLogin } from '../src/dashboard.js';
 
 // Minimal in-memory version of the stats part of the store.
@@ -35,7 +35,7 @@ function statsStore() {
   };
 }
 
-function fakeIg({ rejectFullMetrics = false } = {}) {
+function fakeIg({ rejectFullMetrics = false, rejectExtra = false } = {}) {
   const calls = [];
   return {
     calls,
@@ -51,6 +51,7 @@ function fakeIg({ rejectFullMetrics = false } = {}) {
     async mediaInsights(id, metrics) {
       calls.push(metrics);
       if (rejectFullMetrics && metrics.length > CORE_METRICS.length) throw new Error('(#100) metric not supported');
+      if (rejectExtra && EXTRA_METRICS.some((m) => metrics.includes(m))) throw new Error('(#100) metric not supported');
       return {
         data: metrics.map((name) => ({ name, values: [{ value: name === 'ig_reels_avg_watch_time' ? 6400 : 10 }] })),
       };
@@ -79,9 +80,25 @@ test('falls back to core metrics when Instagram rejects a metric name', async ()
   const store = statsStore();
   const ig = fakeIg({ rejectFullMetrics: true });
   await collectStats({ ig, store });
-  assert.equal(ig.calls.length, 2);
-  assert.deepEqual(ig.calls[1], CORE_METRICS);
+  assert.equal(ig.calls.length, 3);
+  assert.deepEqual(ig.calls[2], CORE_METRICS);
   assert.equal(JSON.parse(store.mediaStats[0].metrics).views, 10);
+});
+
+test('asks for the skip rate; if Instagram rejects it, keeps watch time and stops asking', async () => {
+  const ok = fakeIg();
+  const s1 = statsStore();
+  await collectStats({ ig: ok, store: s1 });
+  assert.ok(ok.calls[0].includes('reels_skip_rate'));
+  assert.equal(JSON.parse(s1.mediaStats[0].metrics).reels_skip_rate, 10);
+
+  const ig = fakeIg({ rejectExtra: true });
+  const store = statsStore();
+  await collectStats({ ig, store });
+  assert.deepEqual(ig.calls[1], REEL_METRICS);
+  const m = JSON.parse(store.mediaStats[0].metrics);
+  assert.equal(m.ig_reels_avg_watch_time, 6400);
+  assert.equal(m.reels_skip_rate, undefined);
 });
 
 test('maybeCollectStats runs at most once an hour and records errors', async () => {

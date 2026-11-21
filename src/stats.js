@@ -6,6 +6,9 @@ export const REEL_METRICS = [
   'views', 'reach', 'likes', 'comments', 'shares', 'saved', 'total_interactions', 'ig_reels_avg_watch_time',
 ];
 export const CORE_METRICS = ['views', 'reach', 'likes', 'comments', 'shares', 'saved'];
+// Newer metrics, asked for on top of REEL_METRICS. reels_skip_rate = % of plays that left in the
+// first 3 seconds (feeds the retention estimate). If Instagram rejects them, the run stops asking.
+export const EXTRA_METRICS = ['reels_skip_rate'];
 
 export const COLLECT_EVERY_MS = 60 * 60 * 1000;
 const isReel = (m) => m.media_product_type === 'REELS' || m.media_type === 'VIDEO';
@@ -20,7 +23,14 @@ export function parseInsights(response) {
   return out;
 }
 
-async function reelInsights(ig, mediaId) {
+async function reelInsights(ig, mediaId, run = { extra: true }) {
+  if (run.extra) {
+    try {
+      return parseInsights(await ig.mediaInsights(mediaId, [...REEL_METRICS, ...EXTRA_METRICS]));
+    } catch {
+      run.extra = false; // not supported (or not for this token): don't pay for it on every reel
+    }
+  }
   try {
     return parseInsights(await ig.mediaInsights(mediaId, REEL_METRICS));
   } catch {
@@ -63,6 +73,7 @@ export async function collectStats({ ig, store, now = () => new Date() }) {
   let reels = 0;
   let skipped = 0;
   let failed = 0;
+  const run = { extra: true };
   for (const m of media) {
     await store.upsertMedia(m);
     if (!isReel(m)) continue;
@@ -73,7 +84,7 @@ export async function collectStats({ ig, store, now = () => new Date() }) {
       continue;
     }
     try {
-      const metrics = await reelInsights(ig, m.id);
+      const metrics = await reelInsights(ig, m.id, run);
       await store.addMediaStats(m.id, at, metrics);
       if (age <= 24 * HOUR && typeof metrics.views === 'number' && store.setDay1) {
         await store.setDay1(m.id, metrics.views, at);
