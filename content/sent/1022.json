@@ -1,0 +1,29 @@
+{
+  "reel": 1022,
+  "name": "reel-h022-city-lobby-board",
+  "batch": "h022",
+  "queued_as": "d8c183b52e7a",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        7.2
+      ],
+      [
+        "b",
+        7.2,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.0
+    ],
+    "stretch": 1.0
+  },
+  "sent_at": "2026-11-21T18:23:31+02:00"
+}
