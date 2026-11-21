@@ -1,0 +1,29 @@
+{
+  "reel": 1021,
+  "name": "reel-h021-city-market-list",
+  "batch": "h021",
+  "queued_as": "7e1ce41e8bec",
+  "length": 13.9,
+  "warnings": [],
+  "beats": {
+    "dur": 13.9,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        7.6
+      ],
+      [
+        "b",
+        7.6,
+        13.9
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.0
+    ],
+    "stretch": 1.0
+  },
+  "sent_at": "2026-11-21T18:11:49+02:00"
+}
