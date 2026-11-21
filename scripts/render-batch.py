@@ -19,7 +19,10 @@ Batch file format (written by the nightly reel task):
           "name": "reel-48-redflags-music",        # output file name, no .mp4
           "title": "ריל 48 · דגלים אדומים · #7",    # shown in Telegram
           "caption": "...",                        # Instagram caption, ready to post
-          "at": null                               # optional "2026-11-21 19:00" (Asia/Jerusalem)
+          "at": null,                              # optional "2026-11-21 19:00" (Asia/Jerusalem)
+          "preview": false                         # optional: true = send to Telegram as a plain video
+                                                   #   with the caption (no Approve button, nothing is
+                                                   #   posted); Gilad downloads and uploads it himself
         }
       ]
     }
@@ -202,12 +205,16 @@ def enqueue(item, path):
     return m.group(1) if m else out.strip()
 
 
-def preview(item, path):
-    """Sends the video to Telegram as a plain message: for listening, not for posting."""
+def preview(item, path, manual=False):
+    """Sends the video to Telegram as a plain message (no Approve button).
+    manual=True: a reel Gilad uploads himself, so the message carries the caption to copy."""
     if DRY_RUN:
         return 'dry-run'
-    text = (f"🎧 {item.get('title') or item['name']}\n"
-            'Voice preview (ElevenLabs free plan). Not in the approval queue and not for posting.')
+    if manual:
+        text = f"📥 {item.get('title') or item['name']}\n\n{item['caption'].strip()}"
+    else:
+        text = (f"🎧 {item.get('title') or item['name']}\n"
+                'Voice preview (ElevenLabs free plan). Not in the approval queue and not for posting.')
     out = sh(['node', os.path.join(ROOT, 'scripts', 'telegram-preview.mjs'), path, text], cwd=ROOT)
     return 'preview ' + out.strip()[-80:]
 
@@ -239,7 +246,10 @@ def main():
                 validate(item)
                 path, dur, voiced = build(item)
                 warnings, length = check(path, dur)
-                if voiced and not VOICE_LICENSED:
+                if item.get('preview'):
+                    queued = preview(item, path, manual=True)
+                    warnings.append('manual upload: sent as a plain video, not in the approval queue')
+                elif voiced and not VOICE_LICENSED:
                     queued = preview(item, path)
                     warnings.append('voiced: preview only (ElevenLabs free plan, not licensed for posting)')
                 else:
