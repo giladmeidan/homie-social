@@ -1,28 +1,28 @@
 {
-  "generated_at": "2026-11-21T21:09:45.472Z",
+  "generated_at": "2026-11-22T18:01:42.762Z",
   "window_days": 30,
   "how_to_read": "vs_typical = first-day views divided by the account's typical reel (1 = typical). Under about 100 views a reel, single-reel differences are mostly noise: trust formats, not reels.",
   "accounts": {
     "instagram": {
-      "followers": 9,
-      "typical_day1": 29,
-      "median_watch_s": 3.9
+      "followers": 11,
+      "typical_day1": 43.5,
+      "median_watch_s": 4
     },
     "tiktok": {
       "followers": 10,
-      "typical_day1": 141
+      "typical_day1": 134
     }
   },
   "formats": [
     {
-      "format": "חיים עם שותפים",
+      "format": "הומי בפעולה",
       "made": 1,
       "published": 1,
       "rejected": 0,
-      "ig_vs_typical": 2.79,
+      "ig_vs_typical": 2.64,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 4.1,
-      "ig_skip_rate": 0.8,
+      "ig_avg_watch_s": 1.6,
+      "ig_skip_rate": 0.93,
       "under_typical_in_a_row": 0,
       "flag": null
     },
@@ -31,22 +31,22 @@
       "made": 2,
       "published": 2,
       "rejected": 0,
-      "ig_vs_typical": 2.69,
+      "ig_vs_typical": 2.33,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 4.4,
-      "ig_skip_rate": 0.78,
+      "ig_avg_watch_s": 4.3,
+      "ig_skip_rate": 0.77,
       "under_typical_in_a_row": 0,
       "flag": null
     },
     {
-      "format": "בעלי דירות",
+      "format": "חיים עם שותפים",
       "made": 1,
       "published": 1,
       "rejected": 0,
-      "ig_vs_typical": 2.52,
+      "ig_vs_typical": 1.86,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 2.2,
-      "ig_skip_rate": 0.87,
+      "ig_avg_watch_s": 4,
+      "ig_skip_rate": 0.8,
       "under_typical_in_a_row": 0,
       "flag": null
     },
@@ -55,10 +55,22 @@
       "made": 11,
       "published": 5,
       "rejected": 6,
-      "ig_vs_typical": 1.76,
-      "tiktok_vs_typical": 0.95,
+      "ig_vs_typical": 1.72,
+      "tiktok_vs_typical": 1,
       "ig_avg_watch_s": 4.6,
       "ig_skip_rate": 0.7,
+      "under_typical_in_a_row": 0,
+      "flag": null
+    },
+    {
+      "format": "בעלי דירות",
+      "made": 1,
+      "published": 1,
+      "rejected": 0,
+      "ig_vs_typical": 1.68,
+      "tiktok_vs_typical": null,
+      "ig_avg_watch_s": 2.2,
+      "ig_skip_rate": 0.87,
       "under_typical_in_a_row": 0,
       "flag": null
     },
@@ -67,11 +79,11 @@
       "made": 1,
       "published": 1,
       "rejected": 0,
-      "ig_vs_typical": 1.03,
+      "ig_vs_typical": 0.69,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 5.1,
-      "ig_skip_rate": 0.68,
-      "under_typical_in_a_row": 0,
+      "ig_avg_watch_s": 6.2,
+      "ig_skip_rate": 0.65,
+      "under_typical_in_a_row": 1,
       "flag": null
     },
     {
@@ -79,11 +91,11 @@
       "made": 5,
       "published": 5,
       "rejected": 0,
-      "ig_vs_typical": 0.59,
-      "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 2.5,
+      "ig_vs_typical": 0.44,
+      "tiktok_vs_typical": 1.3,
+      "ig_avg_watch_s": 3.7,
       "ig_skip_rate": 0.87,
-      "under_typical_in_a_row": 2,
+      "under_typical_in_a_row": 0,
       "flag": null
     },
     {
@@ -91,11 +103,23 @@
       "made": 3,
       "published": 3,
       "rejected": 0,
-      "ig_vs_typical": 0.5,
-      "tiktok_vs_typical": 1.86,
+      "ig_vs_typical": 0.37,
+      "tiktok_vs_typical": 1.96,
       "ig_avg_watch_s": 2.9,
       "ig_skip_rate": 1,
-      "under_typical_in_a_row": 1,
+      "under_typical_in_a_row": 2,
+      "flag": null
+    },
+    {
+      "format": "Feature / promo",
+      "made": 2,
+      "published": 1,
+      "rejected": 1,
+      "ig_vs_typical": null,
+      "tiktok_vs_typical": null,
+      "ig_avg_watch_s": 3.6,
+      "ig_skip_rate": 0.67,
+      "under_typical_in_a_row": 0,
       "flag": null
     },
     {
@@ -105,25 +129,20 @@
       "rejected": 1,
       "ig_vs_typical": null,
       "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 4.5,
-      "ig_skip_rate": 0.69,
-      "under_typical_in_a_row": 0,
-      "flag": null
-    },
-    {
-      "format": "הומי בפעולה",
-      "made": 1,
-      "published": 1,
-      "rejected": 0,
-      "ig_vs_typical": null,
-      "tiktok_vs_typical": null,
-      "ig_avg_watch_s": 1.6,
-      "ig_skip_rate": 0.92,
+      "ig_avg_watch_s": 5.6,
+      "ig_skip_rate": 0.61,
       "under_typical_in_a_row": 0,
       "flag": null
     }
   ],
   "rejections": [
+    {
+      "title": "ריל H27 · Feature / promo · מודעה שכבר מושכרת",
+      "format": "Feature / promo",
+      "reason": "other",
+      "note": "The speech was not accurate \nInstead of the word מודעות listings it says conscious",
+      "created": "2026-11-22T11:15:03.599Z"
+    },
     {
       "title": "ריל H23 · העיר · איזו קומה הייתם שוכרים",
       "format": "העיר",
@@ -183,6 +202,36 @@
   ],
   "reels": [
     {
+      "title": "ריל H27b · Feature / promo · מודעה שכבר מושכרת (תיקון הקראה)",
+      "format": "Feature / promo",
+      "status": "published",
+      "created": "2026-11-22T11:30:38.082Z",
+      "reject_reason": null,
+      "reject_note": null,
+      "instagram": {
+        "day1": 26,
+        "vs_typical": null,
+        "views": 26,
+        "reach": 17,
+        "avg_watch_s": 3.6,
+        "skip_rate": 0.67,
+        "shares_per_1000": 0,
+        "saves_per_1000": 0,
+        "comments_per_1000": 0
+      },
+      "tiktok": null
+    },
+    {
+      "title": "ריל H27 · Feature / promo · מודעה שכבר מושכרת",
+      "format": "Feature / promo",
+      "status": "rejected",
+      "created": "2026-11-22T11:15:03.599Z",
+      "reject_reason": "other",
+      "reject_note": "The speech was not accurate \nInstead of the word מודעות listings it says conscious",
+      "instagram": null,
+      "tiktok": null
+    },
+    {
       "title": "ריל H26 · הצב · הצב עובר דירה",
       "format": "הצב",
       "status": "published",
@@ -190,12 +239,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 60,
+        "day1": 138,
         "vs_typical": null,
-        "views": 60,
-        "reach": 43,
-        "avg_watch_s": 4.5,
-        "skip_rate": 0.69,
+        "views": 138,
+        "reach": 108,
+        "avg_watch_s": 5.6,
+        "skip_rate": 0.61,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -210,15 +259,15 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 166,
-        "vs_typical": null,
-        "views": 166,
-        "reach": 117,
-        "avg_watch_s": 7.5,
-        "skip_rate": 0.63,
+        "day1": 169,
+        "vs_typical": 3.89,
+        "views": 169,
+        "reach": 121,
+        "avg_watch_s": 7.4,
+        "skip_rate": 0.62,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
-        "comments_per_1000": 17.1
+        "comments_per_1000": 16.5
       },
       "tiktok": null
     },
@@ -280,13 +329,13 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 114,
-        "vs_typical": null,
-        "views": 114,
-        "reach": 101,
+        "day1": 115,
+        "vs_typical": 2.64,
+        "views": 115,
+        "reach": 103,
         "avg_watch_s": 1.6,
-        "skip_rate": 0.92,
-        "shares_per_1000": 9.9,
+        "skip_rate": 0.93,
+        "shares_per_1000": 9.7,
         "saves_per_1000": 0,
         "comments_per_1000": 0
       },
@@ -310,10 +359,10 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 16,
-        "vs_typical": null,
-        "views": 16,
-        "reach": 11,
+        "day1": 18,
+        "vs_typical": 0.41,
+        "views": 18,
+        "reach": 13,
         "avg_watch_s": 1.3,
         "skip_rate": 1,
         "shares_per_1000": 0,
@@ -330,20 +379,20 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 54,
-        "vs_typical": null,
-        "views": 54,
-        "reach": 45,
-        "avg_watch_s": 5.4,
-        "skip_rate": 0.66,
+        "day1": 92,
+        "vs_typical": 2.11,
+        "views": 92,
+        "reach": 81,
+        "avg_watch_s": 5.2,
+        "skip_rate": 0.64,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
       },
       "tiktok": {
-        "day1": 78,
-        "vs_typical": null,
-        "views": 78,
+        "day1": 125,
+        "vs_typical": 0.93,
+        "views": 134,
         "shares": 0,
         "comments": 0
       }
@@ -356,12 +405,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 37,
-        "vs_typical": null,
-        "views": 37,
-        "reach": 33,
-        "avg_watch_s": 1.8,
-        "skip_rate": 0.89,
+        "day1": 48,
+        "vs_typical": 1.1,
+        "views": 48,
+        "reach": 44,
+        "avg_watch_s": 2.3,
+        "skip_rate": 0.87,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -376,12 +425,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 36,
-        "vs_typical": null,
-        "views": 36,
-        "reach": 28,
-        "avg_watch_s": 3.1,
-        "skip_rate": 0.79,
+        "day1": 42,
+        "vs_typical": 0.97,
+        "views": 42,
+        "reach": 34,
+        "avg_watch_s": 3,
+        "skip_rate": 0.77,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -396,12 +445,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 20,
-        "vs_typical": null,
-        "views": 20,
-        "reach": 15,
-        "avg_watch_s": 3.5,
-        "skip_rate": 0.81,
+        "day1": 24,
+        "vs_typical": 0.55,
+        "views": 24,
+        "reach": 18,
+        "avg_watch_s": 4.2,
+        "skip_rate": 0.79,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -416,12 +465,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 59,
-        "vs_typical": null,
-        "views": 59,
-        "reach": 50,
+        "day1": 64,
+        "vs_typical": 1.47,
+        "views": 64,
+        "reach": 55,
         "avg_watch_s": 1.9,
-        "skip_rate": 0.9,
+        "skip_rate": 0.87,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -436,12 +485,12 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 110,
-        "vs_typical": null,
-        "views": 110,
-        "reach": 87,
-        "avg_watch_s": 3.5,
-        "skip_rate": 0.88,
+        "day1": 125,
+        "vs_typical": 2.87,
+        "views": 125,
+        "reach": 101,
+        "avg_watch_s": 3.4,
+        "skip_rate": 0.86,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -456,20 +505,20 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 49,
-        "vs_typical": null,
-        "views": 49,
-        "reach": 43,
-        "avg_watch_s": 2.5,
-        "skip_rate": 0.89,
+        "day1": 60,
+        "vs_typical": 1.38,
+        "views": 60,
+        "reach": 55,
+        "avg_watch_s": 3.8,
+        "skip_rate": 0.87,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
       },
       "tiktok": {
-        "day1": 106,
-        "vs_typical": null,
-        "views": 106,
+        "day1": 174,
+        "vs_typical": 1.3,
+        "views": 186,
         "shares": 0,
         "comments": 0
       }
@@ -482,20 +531,20 @@
       "reject_reason": null,
       "reject_note": null,
       "instagram": {
-        "day1": 128,
-        "vs_typical": null,
-        "views": 128,
-        "reach": 112,
-        "avg_watch_s": 4.3,
+        "day1": 129,
+        "vs_typical": 2.97,
+        "views": 131,
+        "reach": 114,
+        "avg_watch_s": 4.4,
         "skip_rate": 0.84,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
       },
       "tiktok": {
-        "day1": 81,
-        "vs_typical": null,
-        "views": 81,
+        "day1": 135,
+        "vs_typical": 1.01,
+        "views": 155,
         "shares": 0,
         "comments": 0
       }
@@ -509,11 +558,11 @@
       "reject_note": null,
       "instagram": {
         "day1": 30,
-        "vs_typical": 1.03,
-        "views": 30,
-        "reach": 20,
-        "avg_watch_s": 5.1,
-        "skip_rate": 0.68,
+        "vs_typical": 0.69,
+        "views": 33,
+        "reach": 21,
+        "avg_watch_s": 6.2,
+        "skip_rate": 0.65,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -529,10 +578,10 @@
       "reject_note": null,
       "instagram": {
         "day1": 81,
-        "vs_typical": 2.79,
-        "views": 85,
-        "reach": 68,
-        "avg_watch_s": 4.1,
+        "vs_typical": 1.86,
+        "views": 87,
+        "reach": 69,
+        "avg_watch_s": 4,
         "skip_rate": 0.8,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
@@ -549,7 +598,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 73,
-        "vs_typical": 2.52,
+        "vs_typical": 1.68,
         "views": 74,
         "reach": 64,
         "avg_watch_s": 2.2,
@@ -569,11 +618,11 @@
       "reject_note": null,
       "instagram": {
         "day1": 10,
-        "vs_typical": 0.34,
-        "views": 11,
+        "vs_typical": 0.23,
+        "views": 12,
         "reach": 6,
-        "avg_watch_s": 9.6,
-        "skip_rate": 0.29,
+        "avg_watch_s": 8.7,
+        "skip_rate": 0.38,
         "shares_per_1000": 0,
         "saves_per_1000": 0,
         "comments_per_1000": 0
@@ -589,7 +638,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 51,
-        "vs_typical": 1.76,
+        "vs_typical": 1.17,
         "views": 56,
         "reach": 44,
         "avg_watch_s": 2.5,
@@ -600,8 +649,8 @@
       },
       "tiktok": {
         "day1": 134,
-        "vs_typical": 0.95,
-        "views": 151,
+        "vs_typical": 1,
+        "views": 164,
         "shares": 0,
         "comments": 0
       }
@@ -615,7 +664,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 16,
-        "vs_typical": 0.55,
+        "vs_typical": 0.37,
         "views": 18,
         "reach": 14,
         "avg_watch_s": 5.1,
@@ -645,7 +694,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 20,
-        "vs_typical": 0.69,
+        "vs_typical": 0.46,
         "views": 21,
         "reach": 6,
         "avg_watch_s": 8.9,
@@ -665,7 +714,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 13,
-        "vs_typical": 0.45,
+        "vs_typical": 0.3,
         "views": 14,
         "reach": 5,
         "avg_watch_s": 2.9,
@@ -676,8 +725,8 @@
       },
       "tiktok": {
         "day1": 262,
-        "vs_typical": 1.86,
-        "views": 267,
+        "vs_typical": 1.96,
+        "views": 284,
         "shares": 0,
         "comments": 0
       }
@@ -691,7 +740,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 78,
-        "vs_typical": 2.69,
+        "vs_typical": 1.79,
         "views": 84,
         "reach": 66,
         "avg_watch_s": 5.2,
@@ -711,7 +760,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 15,
-        "vs_typical": 0.52,
+        "vs_typical": 0.34,
         "views": 17,
         "reach": 10,
         "avg_watch_s": 3.7,
@@ -731,7 +780,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 75,
-        "vs_typical": 2.59,
+        "vs_typical": 1.72,
         "views": 78,
         "reach": 68,
         "avg_watch_s": 4.6,
@@ -751,7 +800,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 45,
-        "vs_typical": 1.55,
+        "vs_typical": 1.03,
         "views": 59,
         "reach": 51,
         "avg_watch_s": 1.8,
@@ -771,7 +820,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 19,
-        "vs_typical": 0.66,
+        "vs_typical": 0.44,
         "views": 21,
         "reach": 13,
         "avg_watch_s": 2.3,
@@ -801,7 +850,7 @@
       "reject_note": null,
       "instagram": {
         "day1": 11,
-        "vs_typical": 0.38,
+        "vs_typical": 0.25,
         "views": 16,
         "reach": 11,
         "avg_watch_s": 2.8,
