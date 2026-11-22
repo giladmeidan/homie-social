@@ -1,0 +1,33 @@
+{
+  "reel": 1028,
+  "name": "reel-h027b-feature-old-listing",
+  "batch": "h027b",
+  "format": "feature",
+  "slot": "2026-11-22 13",
+  "queued_as": "22a420c05e17",
+  "length": 12.9,
+  "warnings": [],
+  "beats": {
+    "dur": 12.9,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        4.6
+      ],
+      [
+        "b",
+        4.6,
+        12.9
+      ]
+    ],
+    "endcard": 11.5,
+    "wordmarks": [],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 4.6,
+      "outro": 11.5
+    }
+  },
+  "sent_at": "2026-11-22T13:30:42+02:00"
+}
