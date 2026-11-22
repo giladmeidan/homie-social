@@ -26,7 +26,7 @@
 #
 # Env: ELEVENLABS_API_KEY (required when the episode has VOICE), ELEVENLABS_VOICE_ID,
 #      VOICE_CACHE (default ./voice-cache), VOICE_MAX_CHARS (default 1500, a guard per reel).
-import hashlib, json, os, subprocess, sys, time, urllib.error, urllib.request
+import re, hashlib, json, os, subprocess, sys, time, urllib.error, urllib.request
 import numpy as np
 from scipy.io import wavfile
 from scipy.signal import butter, lfilter
@@ -186,7 +186,8 @@ placed, problems = [], []
 cursor = 0.0
 for i, (t, end, text) in enumerate(LINES):  # every clip is made first, so one run reports every line that doesn't fit
     if ESTIMATE:
-        clip, used = np.zeros(int(len(text) / CPS * SR)), 'estimate'
+        spoken = re.sub('[\u0591-\u05C7]', '', text)   # niqqud (pronunciation hints) is silent
+        clip, used = np.zeros(int(len(spoken) / CPS * SR)), 'estimate'
     else:
         path, used = tts(text)
         clip = decode(path)
