@@ -1,0 +1,35 @@
+{
+  "reel": 1029,
+  "name": "reel-h029-smart-before-transfer",
+  "batch": "h029",
+  "format": "smart",
+  "slot": "2026-11-22 20",
+  "queued_as": "481fa1e3560b",
+  "length": 13.0,
+  "warnings": [],
+  "beats": {
+    "dur": 13.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        5.4
+      ],
+      [
+        "b",
+        5.4,
+        13.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      12.1
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 5.4,
+      "outro": 11.9
+    }
+  },
+  "sent_at": "2026-11-22T20:13:04+02:00"
+}
