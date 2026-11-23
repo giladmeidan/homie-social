@@ -1,0 +1,35 @@
+{
+  "reel": 1031,
+  "name": "reel-h031-roommate-boiler-august",
+  "batch": "h031",
+  "format": "roommate",
+  "slot": "2026-11-23 20",
+  "queued_as": "0eeef9216f77",
+  "length": 10.6,
+  "warnings": [],
+  "beats": {
+    "dur": 10.6,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        5.0
+      ],
+      [
+        "b",
+        5.0,
+        10.6
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      9.6
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 5.0,
+      "outro": 8.6
+    }
+  },
+  "sent_at": "2026-11-23T20:09:51+02:00"
+}
