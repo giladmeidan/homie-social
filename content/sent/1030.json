@@ -1,0 +1,35 @@
+{
+  "reel": 1030,
+  "name": "reel-h030-pick-which-wall",
+  "batch": "h030",
+  "format": "pick",
+  "slot": "2026-11-23 13",
+  "queued_as": "a5042793b1d8",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        3.9
+      ],
+      [
+        "b",
+        3.9,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.3
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 3.9,
+      "outro": 11.7
+    }
+  },
+  "sent_at": "2026-11-23T13:17:02+02:00"
+}
