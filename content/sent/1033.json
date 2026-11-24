@@ -1,0 +1,35 @@
+{
+  "reel": 1033,
+  "name": "reel-h033-pain-kvar-nisgar",
+  "batch": "h033",
+  "format": "pain",
+  "slot": "2026-11-24 13",
+  "queued_as": "416c6333175d",
+  "length": 11.8,
+  "warnings": [],
+  "beats": {
+    "dur": 11.8,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        8.1
+      ],
+      [
+        "b",
+        8.1,
+        11.8
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      11.1
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 8.1,
+      "outro": 11.1
+    }
+  },
+  "sent_at": "2026-11-24T15:07:09+02:00"
+}
