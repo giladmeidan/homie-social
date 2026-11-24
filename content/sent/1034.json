@@ -1,0 +1,35 @@
+{
+  "reel": 1034,
+  "name": "reel-h034-roommate-friday-challah",
+  "batch": "h034",
+  "format": "roommate",
+  "slot": "2026-11-24 20",
+  "queued_as": "b30942c8f4e1",
+  "length": 10.4,
+  "warnings": [],
+  "beats": {
+    "dur": 10.4,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        7.1
+      ],
+      [
+        "b",
+        7.1,
+        10.4
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      9.6
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 7.1,
+      "outro": 8.6
+    }
+  },
+  "sent_at": "2026-11-24T20:34:56+02:00"
+}
