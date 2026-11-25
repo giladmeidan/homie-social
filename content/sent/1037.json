@@ -1,0 +1,35 @@
+{
+  "reel": 1037,
+  "name": "reel-h037-experiment-turtle-packs-v2",
+  "batch": "h037",
+  "format": "experiment",
+  "slot": "2026-11-25 20",
+  "queued_as": "8277702b8b91",
+  "length": 9.2,
+  "warnings": [],
+  "beats": {
+    "dur": 9.2,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        3.7
+      ],
+      [
+        "b",
+        3.7,
+        9.2
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      8.4
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 3.7,
+      "outro": 6.0
+    }
+  },
+  "sent_at": "2026-11-25T20:22:45+02:00"
+}
