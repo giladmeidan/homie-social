@@ -1,0 +1,7 @@
+{
+  "reel": 1035,
+  "name": "reel-h035-pick-two-minutes",
+  "batch": "h035",
+  "error": "bash build.sh r1035... failed:\ndone r1035 a 129\ndone r1035 b 285\nok r1035\nElevenLabs plan: starter, 38862 characters left, this reel needs about 100\nFAIL voice: lines that don't fit (made clips are cached, only changed lines cost credits):\n  10.05s: 2.82s of speech, room for 2.14s (cut to about 14 characters or drop say): הים. והשאר רחוק\n  11.95s: 1.39s of speech, room for 1.11s (cut to about 12 characters or drop say): אז מה לוקחים?",
+  "failed_at": "2026-11-25T13:09:36+02:00"
+}
