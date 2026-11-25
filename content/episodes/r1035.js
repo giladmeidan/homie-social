@@ -4,8 +4,8 @@
 // Hook "רק אחד / נכנס לעיגול." while the ring ripples and a blue dot walks its edge -> prompt pill
 // "מספר אחד. בתגובות." at 1.9 s -> one beat per place on white (that place slides into the ring and turns blue,
 // the others dim) -> black ask -> wordmark.
-const DUR=13.8;
-const COVER_END=0.4,P0=1.9,B0=4.3,BL=1.9,ASK=B0+4*BL,E0=13.2;   // ASK = 11.9
+const DUR=14.0;
+const COVER_END=0.4,P0=1.9,B0=4.3,BL=1.9,ASK=B0+4*BL,E0=13.4;   // ASK = 11.9
 const SCENES=[['a',0,B0],['b',B0,DUR]];
 Tt.style.zIndex=50;
 const dark=t=>t<B0||(t>=ASK&&t<E0);
@@ -30,7 +30,7 @@ const PLACES=[
   {n:'1',label:'סופר',ic:'cart',l1:'סופר.',l2:'בלי לתכנן קניות.',say:'סופר, בלי לתכנן'},
   {n:'2',label:'תחנה',ic:'bus',l1:'תחנה.',l2:'בלי רכב.',say:'תחנה, בלי רכב'},
   {n:'3',label:'פארק',ic:'tree',l1:'פארק.',l2:'ירוק מתחת לבית.',say:'פארק מתחת לבית'},
-  {n:'4',label:'הים',ic:'sea',l1:'הים.',l2:'והשאר? רחוק.',say:'הים. והשאר רחוק'}];
+  {n:'4',label:'הים',ic:'sea',l1:'הים.',l2:'וזהו.',say:'הים, וזהו'}];
 // map panel (global coords)
 const MX=90,MY=650,MW=900,MH=690,PX=540,PY=990,R=150;
 const POS=[[815,760],[265,760],[815,1160],[265,1160]];   // centres; RTL order: 1 top right, 2 top left, 3, 4
@@ -111,7 +111,7 @@ PLACES.forEach((p,i)=>{const t0=B0+i*BL;
   caption(400,[p.l1,p.l2],t0+.05,t0+BL,{say:p.say,fs:112,cols:[INK,BLUE],fo:.08,sfx:i?'pop2':'whoosh',v:.8})});
 
 /* ---------- the ask (black) ---------- */
-caption(400,['אז מה','אתם לוקחים?'],ASK+.05,E0,{say:'אז מה לוקחים?',fs:118,cols:['#fff',NAMEC],fo:.1,sfx:'whoosh2'});
+caption(400,['אז מה','אתם לוקחים?'],ASK+.05,E0,{say:'מה לוקחים?',fs:118,cols:['#fff',NAMEC],fo:.1,sfx:'whoosh2'});
 ev(ASK+.2,'pop',.7);
 
 /* ---------- brand ending ---------- */
