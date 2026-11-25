@@ -1,0 +1,35 @@
+{
+  "reel": 1035,
+  "name": "reel-h035-pick-two-minutes",
+  "batch": "h035",
+  "format": "pick",
+  "slot": "2026-11-25 13",
+  "queued_as": "3256125d5e6c",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        4.3
+      ],
+      [
+        "b",
+        4.3,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.4
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 4.3,
+      "outro": 11.9
+    }
+  },
+  "sent_at": "2026-11-25T13:16:01+02:00"
+}
