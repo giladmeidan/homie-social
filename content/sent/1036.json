@@ -1,0 +1,35 @@
+{
+  "reel": 1036,
+  "name": "reel-h036-pick-which-street",
+  "batch": "h036",
+  "format": "pick",
+  "slot": "2026-11-25 13",
+  "queued_as": "5bd2d7e96e62",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        5.0
+      ],
+      [
+        "b",
+        5.0,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.4
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 5.0,
+      "outro": 11.9
+    }
+  },
+  "sent_at": "2026-11-25T14:27:37+02:00"
+}
