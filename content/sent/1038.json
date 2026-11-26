@@ -1,0 +1,35 @@
+{
+  "reel": 1038,
+  "name": "reel-h038-pain-intro-again",
+  "batch": "h038",
+  "format": "pain",
+  "slot": "2026-11-26 13",
+  "queued_as": "0d148c432636",
+  "length": 11.9,
+  "warnings": [],
+  "beats": {
+    "dur": 11.9,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        8.0
+      ],
+      [
+        "b",
+        8.0,
+        11.9
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      11.1
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 8.0,
+      "outro": 11.1
+    }
+  },
+  "sent_at": "2026-11-26T13:35:38+02:00"
+}
