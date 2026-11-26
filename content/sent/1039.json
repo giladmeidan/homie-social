@@ -1,0 +1,35 @@
+{
+  "reel": 1039,
+  "name": "reel-h039-pick-what-neighbours-hear",
+  "batch": "h039",
+  "format": "pick",
+  "slot": "2026-11-26 20",
+  "queued_as": "bb08e5c3a4e1",
+  "length": 14.0,
+  "warnings": [],
+  "beats": {
+    "dur": 14.0,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        5.5
+      ],
+      [
+        "b",
+        5.5,
+        14.0
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      13.4
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 5.5,
+      "outro": 11.0
+    }
+  },
+  "sent_at": "2026-11-26T20:12:25+02:00"
+}
