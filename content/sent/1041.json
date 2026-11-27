@@ -1,0 +1,33 @@
+{
+  "reel": 1041,
+  "name": "reel-h041-feature-viewing-hours",
+  "batch": "h041",
+  "format": "feature",
+  "slot": "2026-11-27 20",
+  "queued_as": "fd70ac0c4f46",
+  "length": 13.8,
+  "warnings": [],
+  "beats": {
+    "dur": 13.8,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        6.0
+      ],
+      [
+        "b",
+        6.0,
+        13.8
+      ]
+    ],
+    "endcard": 12.4,
+    "wordmarks": [],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 6.0,
+      "outro": 12.4
+    }
+  },
+  "sent_at": "2026-11-27T20:16:07+02:00"
+}
