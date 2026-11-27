@@ -1,0 +1,46 @@
+{
+  "reel": 9002,
+  "name": "reel-9002-engine2-test-two-milks",
+  "batch": "test-engine2-2026-11-27",
+  "format": "experiment",
+  "slot": null,
+  "queued_as": "preview sent message 293",
+  "length": 9.6,
+  "warnings": [
+    "manual upload: sent as a plain video, not in the approval queue"
+  ],
+  "beats": {
+    "dur": 9.6,
+    "scenes": [
+      [
+        "bar1",
+        0.0,
+        2.4
+      ],
+      [
+        "bar2",
+        2.4,
+        4.8
+      ],
+      [
+        "bar3",
+        4.8,
+        7.2
+      ],
+      [
+        "bar4",
+        7.2,
+        9.6
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 7.2
+    }
+  },
+  "sent_at": "2026-11-27T18:52:54+02:00",
+  "engine": "v2",
+  "look": "paper"
+}
