@@ -9,6 +9,7 @@ on:
     paths:
       - 'content/batches/**'
       - 'content/episodes/**'
+      - 'content/engine2/reels/**'
   workflow_dispatch:
     inputs:
       retry_failed:
@@ -106,6 +107,38 @@ jobs:
         run: |
           pip install -r content/engine/requirements.txt
           python -m playwright install --with-deps chromium
+
+      # Engine 2 (content/engine2) is set up only when a waiting reel says "engine": "v2",
+      # so a run with Engine 1 reels only is exactly what it was before. If its setup fails, the
+      # run goes on: the Engine 2 reel is marked failed and the Engine 1 reels still render.
+      - name: Engine 2 · is a waiting reel built with it?
+        id: e2
+        env:
+          RETRY_FAILED: ${{ inputs.retry_failed && '1' || '0' }}
+        run: echo "needed=$(python scripts/render-batch.py --needs-engine2 || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Engine 2 · Node 22
+        if: steps.e2.outputs.needed == 'true'
+        continue-on-error: true
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: content/engine2/package-lock.json
+
+      - name: Engine 2 · restore the SoundFont
+        if: steps.e2.outputs.needed == 'true'
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: content/engine2/audio/cache
+          key: engine2-soundfont-${{ hashFiles('content/engine2/audio/make_audio.py') }}
+          restore-keys: engine2-soundfont-
+
+      - name: Engine 2 · set up (pinned packages, base files, sampler, SoundFont)
+        if: steps.e2.outputs.needed == 'true'
+        continue-on-error: true
+        run: bash content/engine2/tools_setup.sh
 
       - name: Restore ElevenLabs voice clips
         uses: actions/cache/restore@v4

@@ -1,0 +1,16 @@
+{
+ "batch": "test-engine2-2026-11-27",
+ "reels": [
+  {
+   "reel": 9002,
+   "episode": "r9002",
+   "name": "reel-9002-engine2-test-two-milks",
+   "title": "TEST · מנוע 2 · יום 1. שני חלבים. (לא לפרסום)",
+   "caption": "ENGINE 2 TEST: בדיקת מנוע 2 בצינור הרינדור, על הפיילוט \"יום 1. שני חלבים.\". תצוגה בלבד, לא לפרסום.\n\n#homie #הומי",
+   "at": null,
+   "engine": "v2",
+   "format": "experiment",
+   "preview": true
+  }
+ ]
+}
