@@ -1,0 +1,12 @@
+{
+  "name": "homie-engine2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "homie reel engine 2: HyperFrames + GSAP. Pinned versions so a reel re-renders the same way.",
+  "dependencies": {
+    "hyperframes": "0.9.102",
+    "gsap": "3.15.1",
+    "@fontsource/fredoka": "5.3.0",
+    "@fontsource/rubik": "5.3.0"
+  }
+}

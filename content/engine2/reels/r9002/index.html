@@ -1,0 +1,321 @@
+<!doctype html>
+<!-- homie · Engine 2 · pilot reel X3 "יום 1. שני חלבים."  (look: paper / rich illustrated)
+     Experiment-pool idea X3: a remake of H5 as an unvoiced object loop. 4 bars at 100 BPM = 9.6 s, one day per bar.
+     Everything visible is a function of timeline time. Sound cues are declared next to the moves (E2.cue). -->
+<html lang="he" dir="rtl" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/base/gsap.min.js"></script>
+    <script src="assets/base/SplitText.min.js"></script>
+    <script src="assets/base/e2.js"></script>
+    <style>
+      @font-face { font-family: Fredoka; font-weight: 600; src: url(assets/base/fonts/fredoka-hebrew-600-normal.woff2); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+      @font-face { font-family: Fredoka; font-weight: 600; src: url(assets/base/fonts/fredoka-latin-600-normal.woff2); unicode-range: U+0000-00FF, U+2000-206F, U+20AC; }
+      @font-face { font-family: Rubik; font-weight: 500; src: url(assets/base/fonts/rubik-hebrew-500-normal.woff2); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+      @font-face { font-family: Rubik; font-weight: 500; src: url(assets/base/fonts/rubik-latin-500-normal.woff2); unicode-range: U+0000-00FF, U+2000-206F, U+20AC; }
+      @font-face { font-family: Rubik; font-weight: 700; src: url(assets/base/fonts/rubik-hebrew-700-normal.woff2); unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+      @font-face { font-family: Rubik; font-weight: 700; src: url(assets/base/fonts/rubik-latin-700-normal.woff2); unicode-range: U+0000-00FF, U+2000-206F, U+20AC; }
+
+      :root { --ink: #111111; --blue: #2563eb; --blue-strong: #1d4ed8; --soft: #e8f0fe; --blush: #bfd3fa; --shade: #dde4f1; --shade2: #c9d3e6; }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1080px; height: 1920px; overflow: hidden; background: #eef2fb; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; font-family: Rubik, sans-serif; direction: rtl; }
+      .clip { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+
+      /* ---- world ---- */
+      .ly { position: absolute; left: 0; top: 44px; width: 1080px; height: 1920px; }
+      .ly > svg { position: absolute; left: 0; top: 0; display: block; overflow: visible; }
+      .puff { position: absolute; width: 620px; height: 260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.95), rgba(255,255,255,0)); }
+      .actor { position: absolute; top: 776px; width: 300px; height: 420px; }
+      .actor .lift, .actor .size, .actor .body { position: absolute; left: 0; top: 0; width: 300px; height: 420px; }
+      .actor .shadow { position: absolute; left: -30px; top: 386px; width: 340px; height: 52px; border-radius: 50%; background: radial-gradient(closest-side, rgba(17,25,50,.30), rgba(17,25,50,0)); }
+      .actor svg { position: absolute; left: 0; top: 0; overflow: visible; display: block; }
+      .tape { position: absolute; left: 36px; top: 298px; width: 188px; height: 66px; background: #f6f8fc; border: 5px solid var(--ink); border-radius: 7px; box-shadow: 0 5px 0 rgba(17,25,50,.12); text-align: center; font: 600 46px/54px Fredoka, sans-serif; color: var(--ink); direction: rtl; }
+      .tape span { position: absolute; left: 0; top: 0; width: 100%; white-space: nowrap; }
+      .note { position: absolute; left: 60px; top: 262px; width: 142px; height: 138px; background: var(--soft); border: 5px solid var(--ink); border-radius: 6px 6px 22px 6px; box-shadow: 0 8px 0 rgba(17,25,50,.14); text-align: center; font: 600 39px/1.08 Fredoka, sans-serif; color: var(--ink); padding-top: 22px; direction: rtl; }
+      #cone { position: absolute; left: 0; top: 128px; width: 1080px; height: 1040px; clip-path: polygon(30.5% 0, 56.5% 0, 92% 100%, 0% 100%); background: linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,0) 88%); }
+      .wshadow { position: absolute; left: 58px; top: 70px; width: 236px; height: 330px; border-radius: 30px; background: rgba(27,46,92,.20); filter: blur(22px); }
+      #burst { position: absolute; left: 70px; top: 560px; width: 800px; height: 800px; border-radius: 50%; background: radial-gradient(closest-side, rgba(37,99,235,.0) 52%, rgba(37,99,235,.42) 70%, rgba(37,99,235,0) 86%); }
+      #sweep { position: absolute; left: 0; top: -200px; width: 420px; height: 2400px; background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.62), rgba(255,255,255,0)); }
+      #vignette { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; background: radial-gradient(ellipse 78% 62% at 44% 46%, rgba(24,44,96,0) 60%, rgba(24,44,96,.15) 100%); }
+      #grain { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; background: url(assets/base/grain.png); background-size: 512px 512px; opacity: .045; }
+
+      /* ---- titles (never inside the camera: a landed title stays dead still) ---- */
+      .brandrow { position: absolute; left: 86px; top: 288px; width: 768px; display: flex; justify-content: center; }
+      .badge { height: 60px; padding: 0 24px; border-radius: 30px; background: #fff; border: 4px solid var(--ink); display: flex; align-items: center; box-shadow: 0 6px 0 rgba(17,25,50,.10); }
+      .badge svg { width: 88px; height: auto; display: block; }
+      .headline { position: absolute; left: 86px; top: 364px; width: 768px; text-align: center; direction: rtl; }
+      .headline .l1 { font: 600 80px/1.12 Fredoka, sans-serif; color: var(--ink); white-space: nowrap; }
+      .headline .l2 { font: 600 112px/1.12 Fredoka, sans-serif; color: var(--blue); white-space: nowrap; }
+      .pillrow { position: absolute; left: 86px; top: 596px; width: 768px; display: flex; justify-content: center; }
+      .pill { height: 92px; padding: 0 40px; border-radius: 46px; background: #fff; border: 5px solid var(--ink); box-shadow: 0 10px 0 rgba(17,25,50,.12); font: 600 52px/82px Fredoka, sans-serif; color: var(--ink); white-space: nowrap; direction: rtl; }
+      .pill b { font-weight: 600; color: var(--blue); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="9.6" data-width="1080" data-height="1920">
+
+      <!-- the world: three depth layers the camera moves by different amounts -->
+      <div id="world" class="clip" data-start="0" data-duration="9.6" data-track-index="0" data-layout-allow-overflow>
+        <div id="lyBack" class="ly">
+          <svg viewBox="0 0 1080 1920" width="1080" height="1920">
+            <defs>
+              <linearGradient id="gWall" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#fcfdff" /><stop offset=".6" stop-color="#f1f5fe" /><stop offset="1" stop-color="#e3ebfb" />
+              </linearGradient>
+              <radialGradient id="gLamp" cx="470" cy="130" r="860" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#fff" stop-opacity="1" /><stop offset=".42" stop-color="#fff" stop-opacity=".6" /><stop offset="1" stop-color="#fff" stop-opacity="0" />
+              </radialGradient>
+              <linearGradient id="gUnder" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1b2e5c" stop-opacity=".17" /><stop offset="1" stop-color="#1b2e5c" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <rect x="-120" y="-160" width="1320" height="2240" fill="url(#gWall)" />
+            <g stroke="#d6dff0" stroke-width="4" opacity=".55">
+              <path d="M150 -160V1150M310 -160V1150M470 -160V1150M630 -160V1150M790 -160V1150M950 -160V1150" />
+            </g>
+            <rect x="-120" y="-160" width="1320" height="1500" fill="url(#gLamp)" />
+            <!-- lamp -->
+            <rect x="330" y="72" width="280" height="56" rx="28" fill="#fff" stroke="#111" stroke-opacity=".28" stroke-width="6" />
+            <path d="M362 100H578" stroke="#bfd3fa" stroke-width="10" stroke-linecap="round" />
+            <!-- lower compartment -->
+            <rect x="-120" y="1224" width="1320" height="150" fill="url(#gUnder)" />
+            <g stroke="#111" stroke-opacity=".5" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+              <!-- pot -->
+              <rect x="150" y="1440" width="200" height="106" rx="18" fill="#eef2fa" />
+              <path d="M150 1470H126M350 1470H374" fill="none" />
+              <ellipse cx="250" cy="1440" rx="112" ry="20" fill="#dde4f1" />
+              <circle cx="250" cy="1412" r="14" fill="#2563eb" />
+              <!-- jar -->
+              <rect x="468" y="1408" width="104" height="138" rx="16" fill="#e8f0fe" />
+              <rect x="478" y="1466" width="84" height="72" rx="10" fill="#bfd3fa" stroke="none" />
+              <rect x="462" y="1388" width="116" height="26" rx="9" fill="#c9d3e6" />
+              <!-- eggs -->
+              <ellipse cx="712" cy="1492" rx="27" ry="34" fill="#fff" /><ellipse cx="772" cy="1492" rx="27" ry="34" fill="#fff" />
+              <ellipse cx="832" cy="1492" rx="27" ry="34" fill="#fff" /><ellipse cx="892" cy="1492" rx="27" ry="34" fill="#fff" />
+              <rect x="672" y="1496" width="260" height="50" rx="14" fill="#dde4f1" />
+              <!-- lower shelf -->
+              <rect x="64" y="1546" width="952" height="22" fill="#dce8ff" />
+            </g>
+            <!-- crisper drawer -->
+            <circle cx="290" cy="1800" r="74" fill="#bfd3fa" /><circle cx="452" cy="1822" r="58" fill="#dde4f1" />
+            <circle cx="640" cy="1790" r="84" fill="#c9d3e6" /><circle cx="812" cy="1820" r="62" fill="#bfd3fa" />
+            <rect x="96" y="1650" width="888" height="300" rx="30" fill="#fff" fill-opacity=".58" stroke="#111" stroke-opacity=".42" stroke-width="6" />
+            <rect x="420" y="1692" width="240" height="26" rx="13" fill="#fff" stroke="#111" stroke-opacity=".42" stroke-width="6" />
+          </svg>
+          <div id="cone"></div>
+        </div>
+
+        <div id="lyMid" class="ly">
+          <div class="puff" id="p1" style="left:-60px;top:150px"></div>
+          <div class="puff" id="p2" style="left:420px;top:60px"></div>
+          <div class="puff" id="p3" style="left:160px;top:520px"></div>
+          <svg viewBox="0 0 1080 1920" width="1080" height="1920">
+            <!-- glass shelf: surface, then front edge -->
+            <path d="M64 1198H1016L972 1146H108Z" fill="#fff" fill-opacity=".72" />
+            <path d="M108 1146H972" stroke="#c9d3e6" stroke-width="4" />
+            <rect x="64" y="1198" width="952" height="28" fill="#d5e3ff" stroke="#111" stroke-width="7" stroke-linejoin="round" />
+            <path d="M84 1207H996" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9" />
+          </svg>
+          <div id="burst"></div>
+          <div class="actor" id="aR" style="left:525px"><div class="shadow"></div><div class="lift"><div class="size"><div class="wshadow"></div><div class="body"><div class="art"></div><div class="tape"><span class="a">שלי</span><span class="b">שלנו</span></div></div></div></div></div>
+          <div class="actor" id="aL" style="left:120px"><div class="shadow"></div><div class="lift"><div class="size"><div class="wshadow"></div><div class="body"><div class="art"></div><div class="tape"><span class="a">שלי</span></div></div></div></div></div>
+          <div class="actor" id="aBig" style="left:340px"><div class="shadow"></div><div class="lift"><div class="size"><div class="wshadow"></div><div class="body"><div class="art"></div><div class="note">קניתי<br />לנו.</div></div></div></div></div>
+        </div>
+
+        <div id="lyFront" class="ly">
+          <svg viewBox="0 0 1080 1920" width="1080" height="1920">
+            <defs>
+              <linearGradient id="gSideL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b2c2e4" /><stop offset="1" stop-color="#cfdaf2" /></linearGradient>
+              <linearGradient id="gSideR" x1="1" y1="0" x2="0" y2="0"><stop offset="0" stop-color="#b2c2e4" /><stop offset="1" stop-color="#cfdaf2" /></linearGradient>
+            </defs>
+            <path d="M-160 -200H52L64 -120V2120H-160Z" fill="url(#gSideL)" />
+            <path d="M64 -120V2120" stroke="#111" stroke-opacity=".22" stroke-width="6" />
+            <path d="M1240 -200H1028L1016 -120V2120H1240Z" fill="url(#gSideR)" />
+            <path d="M1016 -120V2120" stroke="#111" stroke-opacity=".22" stroke-width="6" />
+          </svg>
+        </div>
+
+        <div id="sweep"></div>
+        <div id="vignette"></div>
+        <div id="grain"></div>
+      </div>
+
+      <!-- brand, seen first: a small wordmark from frame 0 -->
+      <div id="brand" class="clip" data-start="0" data-duration="9.6" data-track-index="1">
+        <div class="brandrow"><div class="badge"><svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.1 -76.8 212.3 83.9" role="img" aria-label="הומי" fill="#111111"><use href="#wm" /></svg></div></div>
+      </div>
+
+      <!-- one headline per bar; frame 0 already shows the first one in full -->
+      <div id="t1" class="clip" data-start="0" data-duration="2.4" data-track-index="2"><div class="headline"><div class="in"><div class="l1">יום 1.</div><div class="l2">שני חלבים.</div></div></div></div>
+      <div id="t2" class="clip" data-start="2.4" data-duration="2.4" data-track-index="2"><div class="headline"><div class="in"><div class="l1">יום 3.</div><div class="l2">״אפשר טיפה?״</div></div></div></div>
+      <div id="t3" class="clip" data-start="4.8" data-duration="2.4" data-track-index="2"><div class="headline"><div class="in"><div class="l1">יום 5.</div><div class="l2">״יש בשלי.״</div></div></div></div>
+      <div id="t4" class="clip" data-start="7.2" data-duration="2.4" data-track-index="2"><div class="headline"><div class="in"><div class="l1">יום 7.</div><div class="l2">חלב אחד.</div></div></div></div>
+
+      <!-- the ask, on screen by 1.2 s -->
+      <div id="prompt" class="clip" data-start="1.2" data-duration="3.5" data-track-index="3"><div class="pillrow"><div class="pill">שלחו <b>לשותפים החדשים.</b></div></div></div>
+
+      <audio id="mix" src="assets/mix.wav" data-start="0" data-duration="9.6" data-volume="1" data-track-index="4"></audio>
+    </div>
+
+    <!-- shared symbols -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <g id="wm"><path d="M14.9 -28.8Q10.6 -28.8 8.6 -30.2Q6.7 -31.6 6.3 -33.6Q5.9 -35.6 5.9 -37.9V-61.1Q5.9 -63.4 6.3 -65.5Q6.7 -67.6 8.6 -68.9Q10.6 -70.2 15 -70.2Q19.4 -70.2 21.3 -68.8Q23.2 -67.4 23.6 -65.3Q24 -63.2 24 -61V-37.8Q24 -35.5 23.5 -33.5Q23 -31.4 21.2 -30.1Q19.3 -28.8 14.9 -28.8ZM103.3 -32.8V-8Q103.3 -3.8 102.8 -1.9Q102.2 0 100.4 0.5Q98.5 1.1 94.3 1.1H71.3Q69 1.1 66.9 0.6Q64.8 0.1 63.5 -1.7Q62.2 -3.6 62.2 -8Q62.2 -12.5 63.5 -14.4Q64.8 -16.3 66.9 -16.7Q69 -17.2 71.4 -17.2H85.1V-32.4Q85.1 -39.5 83.8 -43.9Q82.6 -48.4 80 -50.4Q77.4 -52.4 73.4 -52.4Q69.2 -52.4 66.5 -50.7Q63.7 -49 62 -46Q60.4 -43.1 59.3 -39.5Q58.3 -35.9 57.5 -32.2L53 -8Q52.6 -5.8 52.1 -3.7Q51.7 -1.6 49.9 -0.2Q48.1 1.1 43.7 1.1Q38.2 1.1 36 -1.1Q33.8 -3.4 34.8 -8.2L41.3 -43.9L47.6 -36.8Q49.6 -41.5 51 -46.4Q52.4 -51.2 54.1 -55.6Q55.7 -60 58.4 -63.4Q61.2 -66.7 65.6 -68.8Q70 -70.8 76.9 -70.8Q85.4 -70.8 91.3 -66.4Q97.1 -62 100.2 -53.6Q103.3 -45.1 103.3 -32.8ZM43.2 -25.3 34.7 -58.8Q34.1 -61.2 34 -63.4Q34 -65.5 35.5 -67.3Q37 -69 41.4 -70Q45.8 -70.9 48 -70Q50.2 -69 51 -67.1Q51.8 -65.3 52.3 -63.2L57.6 -39.6ZM123.5 1.1Q119.2 1.1 117.2 -0.2Q115.3 -1.6 114.9 -3.7Q114.5 -5.8 114.5 -8V-61.1Q114.5 -63.4 114.9 -65.5Q115.3 -67.6 117.2 -68.9Q119.2 -70.2 123.6 -70.2Q128 -70.2 129.9 -68.8Q131.8 -67.4 132.2 -65.3Q132.6 -63.2 132.6 -61V-7.9Q132.6 -5.6 132.1 -3.6Q131.6 -1.6 129.8 -0.2Q127.9 1.1 123.5 1.1ZM197.2 1.1Q192.8 1.1 190.9 -0.1Q189 -1.3 188.5 -3.3Q188 -5.3 188 -7.3V-30.6Q188 -37.9 186.2 -42.6Q184.3 -47.3 180.5 -49.6Q176.6 -51.8 170.6 -51.8H151.7Q149.3 -51.8 147.2 -52.3Q145.1 -52.8 143.8 -54.7Q142.4 -56.6 142.4 -61Q142.4 -65.4 143.8 -67.3Q145.1 -69.2 147.2 -69.7Q149.3 -70.2 151.6 -70.2H170.3Q182.4 -70.2 190.4 -65.9Q198.4 -61.6 202.3 -52.9Q206.2 -44.2 206.2 -30.8V-8.2Q206.2 -5.8 205.7 -3.7Q205.3 -1.6 203.5 -0.2Q201.6 1.1 197.2 1.1ZM152.6 1.1Q148.3 1.1 146.4 -0.2Q144.5 -1.6 144.1 -3.7Q143.6 -5.8 143.6 -8V-29.9Q143.6 -32.2 144.1 -34.2Q144.5 -36.2 146.4 -37.6Q148.3 -38.9 152.8 -38.9Q157.2 -38.9 159.1 -37.5Q160.9 -36.1 161.3 -34.1Q161.8 -32 161.8 -29.8V-7.9Q161.8 -5.6 161.3 -3.6Q160.8 -1.6 158.9 -0.2Q157.1 1.1 152.6 1.1Z" fill="#111111"/></g>
+        <linearGradient id="gFront" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" /><stop offset="1" stop-color="#eef2fa" /></linearGradient>
+        <clipPath id="cFront"><rect x="25" y="120" width="210" height="290" /></clipPath>
+      </defs>
+    </svg>
+
+    <script>
+      /* ---------- art: the milk carton (ink outline like the turtle, with tone and volume) ---------- */
+      function cartonSVG() {
+        const INK = "#111111";
+        let ticks = "";
+        for (let x = 62; x <= 200; x += 23) ticks += `M${x} 30V44`;
+        return `<svg viewBox="0 0 300 420" width="300" height="420">
+          <g stroke="${INK}" stroke-width="8" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M235 410L278 388V98L235 120Z" fill="#d5ddee" />
+            <path d="M235 120L278 98L252 42L218 52Z" fill="#c3cee3" />
+            <path d="M218 52L252 42V12L218 22Z" fill="#dde4f1" />
+            <rect x="25" y="120" width="210" height="290" fill="url(#gFront)" />
+            <path d="M25 120H235L218 52H42Z" fill="#eef2fa" />
+            <rect x="42" y="22" width="176" height="30" fill="#ffffff" />
+          </g>
+          <path d="${ticks}" stroke="${INK}" stroke-width="3" opacity=".3" stroke-linecap="round" />
+          <g clip-path="url(#cFront)">
+            <path d="M25 316C70 288 108 344 150 318S214 298 235 322V410H25Z" fill="#2563eb" />
+            <path d="M25 362C82 340 120 386 172 360S220 350 235 360V410H25Z" fill="#1d4ed8" />
+            <path d="M46 132V404" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity=".55" />
+          </g>
+          <rect x="25" y="120" width="210" height="290" fill="none" stroke="${INK}" stroke-width="8" stroke-linejoin="round" />
+          <text x="130" y="238" text-anchor="middle" font-family="Fredoka" font-weight="600" font-size="78" fill="${INK}" data-layout-ignore>חלב</text>
+          <ellipse cx="150" cy="88" rx="27" ry="17" fill="#2563eb" stroke="${INK}" stroke-width="6" />
+          <ellipse cx="146" cy="84" rx="13" ry="6" fill="#8fb1f7" />
+        </svg>`;
+      }
+      document.querySelectorAll(".actor .art").forEach((el) => (el.innerHTML = cartonSVG()));
+
+      /* ---------- timeline ---------- */
+      gsap.registerPlugin(SplitText);
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+      const g = E2.grid(100);                                   // 100 BPM: a beat is 18 frames, a bar 2.4 s
+      const B2 = g.bar(1), B3 = g.bar(2), B4 = g.bar(3), END = g.bar(4);
+      const cue = E2.cue;
+
+      // actors pivot on the middle of their base
+      const ORIGIN = "130px 410px";
+      gsap.set(".actor, .actor .lift, .actor .size, .actor .body", { transformOrigin: ORIGIN });
+      gsap.set(".actor .shadow", { transformOrigin: "50% 50%" });
+      gsap.set(".tape", { rotation: -4, transformOrigin: "50% 50%" });
+      gsap.set("#aL .tape", { rotation: 5 });
+      gsap.set("#aR .tape .b", { opacity: 0 });
+      gsap.set(".note", { rotation: 4, transformOrigin: "50% 40%" });
+      gsap.set("#aBig", { opacity: 0 });
+      gsap.set(".actor .size", { scale: 1.1 });
+      gsap.set("#aBig .size", { scale: 1.3 });
+      gsap.set("#burst", { opacity: 0, scale: 0.2, transformOrigin: "50% 50%" });
+      const L = { x: "#aL", y: "#aL .lift", s: "#aL .body", shadow: "#aL .shadow" };
+      const R = { x: "#aR", y: "#aR .lift", s: "#aR .body", shadow: "#aR .shadow" };
+
+      // a hop that lands exactly on `land`; the shadow stays on the shelf and shrinks while airborne
+      function hop(p, o) {
+        const air = o.air || 0.28, ant = 0.1, c = o.crouch || 0.12, t0 = o.land - air, rec = o.rec || 0.3;
+        tl.to(p.s, { scaleY: 1 - c, scaleX: 1 + c * 0.7, duration: ant, ease: "power2.out" }, t0 - ant)
+          .to(p.s, { scaleY: 1.07, scaleX: 0.95, duration: air * 0.4, ease: "power2.out" }, t0)
+          .to(p.x, { x: o.x, duration: air, ease: "power1.inOut" }, t0)
+          .to(p.y, { y: -(o.height || 78), duration: air / 2, ease: "power2.out" }, t0)
+          .to(p.y, { y: 0, duration: air / 2, ease: "power2.in" }, t0 + air / 2)
+          .to(p.shadow, { scale: 0.72, opacity: 0.55, duration: air / 2, ease: "power2.out" }, t0)
+          .to(p.shadow, { scale: 1, opacity: 1, duration: air / 2, ease: "power2.in" }, t0 + air / 2)
+          .to(p.s, { scaleY: 1 - c, scaleX: 1 + c * 0.7, duration: 0.07, ease: "power1.out" }, o.land)
+          .to(p.s, { scaleY: 1, scaleX: 1, duration: rec, ease: rec < 0.2 ? "back.out(2)" : "elastic.out(1,0.5)" }, o.land + 0.07);
+        cue("whiff", t0, 0.5);
+        cue("thud", o.land, o.v || 0.8);
+      }
+
+      /* ambient life: cold air drifting, the light catching the wall as the door opens */
+      tl.fromTo("#sweep", { x: -640, rotation: 12 }, { x: 1500, rotation: 12, duration: 1.1, ease: "power2.out" }, 0);
+      tl.fromTo("#p1", { x: 0, y: -30, opacity: 0.75 }, { x: 90, y: 240, opacity: 0.25, duration: END, ease: "none" }, 0);
+      tl.fromTo("#p2", { x: 0, y: -60, opacity: 0.55 }, { x: -120, y: 300, opacity: 0.35, duration: END, ease: "none" }, 0);
+      tl.fromTo("#p3", { x: 40, y: 0, opacity: 0.3 }, { x: -60, y: 260, opacity: 0.0, duration: END, ease: "none" }, 0);
+      cue("hum", 0, 1, { dur: END });
+
+      /* camera: drifts inside a bar, moves on the bar line */
+      const cam = E2.camera([["#lyBack", 0.55], ["#lyMid", 1], ["#lyFront", 1.4]], "470px 1010px");
+      cam(tl, 0, B2 - 0.2, { scale: 1.03 }, "none");
+      cam(tl, B2 - 0.2, 0.45, { scale: 1.07, x: 6 });
+      cam(tl, B2 + 0.25, B3 - B2 - 0.45, { scale: 1.09, x: 6 }, "none");
+      cam(tl, B3 - 0.2, 0.45, { scale: 1.17, x: 4, y: -6 });
+      cam(tl, B3 + 0.25, B4 - B3 - 0.45, { scale: 1.195, x: 4, y: -6 }, "none");
+      cam(tl, B4 - 0.2, 0.42, { scale: 1.04, x: 0, y: 8 }, "power3.inOut");
+      cam(tl, B4 + 0.22, END - B4 - 0.22, { scale: 1.07, x: 0, y: 8 }, "none");
+
+      /* BAR 1 · day 1: two cartons, two labels, a cold shoulder each */
+      tl.to("#aR", { rotation: 5, duration: 0.5, ease: "back.out(2.2)" }, 0.3);            cue("creak", 0.3, 0.6);
+      tl.to("#aL", { rotation: -6, duration: 0.5, ease: "back.out(2.2)" }, 0.5);           cue("creak", 0.5, 0.5);
+      tl.to("#aL", { rotation: -2, duration: 0.35, ease: "power2.inOut" }, 1.8);
+
+      /* BAR 2 · day 3: the left one asks. Two hops that land on beats 5 and 6 */
+      tl.to("#aL", { rotation: 0, duration: 0.16, ease: "power2.out" }, B2 - 0.1);
+      hop(L, { land: g(5), x: 35, rec: 0.14, v: 0.75, height: 38 });
+      hop(L, { land: g(6), x: 70, v: 0.9, height: 38 });
+      tl.to("#aR", { rotation: 9, duration: 0.16, ease: "power2.out" }, g(5));             cue("creak", g(5) + 0.02, 0.5);
+      tl.to("#aL", { rotation: 7, duration: 0.32, ease: "back.out(2)" }, g(6) + 0.14);
+      tl.to("#aR", { rotation: 0, duration: 0.42, ease: "power2.inOut" }, g(6) + 0.3);
+      E2.squash(tl, "#aR .body", g(7) + 0.06, 0.07);                                        cue("tok", g(7) + 0.06, 0.6);
+
+      /* BAR 3 · day 5: the left one is empty and slumps, its label lets go; the right one comes over */
+      tl.to("#aL", { rotation: -9, duration: 0.33, ease: "power2.inOut" }, B3 - 0.18);
+      tl.to("#aL .body", { scaleY: 0.91, scaleX: 1.03, duration: 0.33, ease: "power2.inOut" }, B3 - 0.18);   cue("crumple", B3 - 0.14, 0.7);
+      tl.to("#aL .tape", { y: 560, x: -70, rotation: -58, duration: 0.62, ease: "power2.in" }, B3 + 0.2);     cue("peel", B3 + 0.18, 0.7);
+      tl.to("#aL .tape", { opacity: 0, duration: 0.12, ease: "none" }, B3 + 0.7);
+      tl.to("#aR", { rotation: 4, duration: 0.12, ease: "power2.out" }, B3 + 0.06);
+      tl.to("#aR", { x: -60, rotation: -6, duration: 0.42, ease: "power3.out" }, B3 + 0.18);                  cue("slide", B3 + 0.18, 0.7);
+      tl.to("#aR", { rotation: -3, duration: 0.2, ease: "power2.out" }, g(9));                                cue("bump", g(9), 0.9);
+      tl.to("#aL", { rotation: 3, duration: 0.3, ease: "back.out(2.5)" }, g(9));
+      tl.to("#aL .body", { scaleY: 1, scaleX: 1, duration: 0.3, ease: "back.out(2.5)" }, g(9));
+      tl.to("#aL", { rotation: 5, duration: 0.4, ease: "power2.out" }, g(10));
+      tl.to("#aR", { rotation: -5, duration: 0.4, ease: "power2.out" }, g(10));                               cue("creak", g(10), 0.45);
+      // "mine" becomes "ours" on the right one's label
+      tl.to("#aR .tape", { scale: 1.2, duration: 0.1, ease: "power2.out" }, g(10.5))
+        .to("#aR .tape .a", { opacity: 0, duration: 0.06, ease: "none" }, g(10.5) + 0.06)
+        .to("#aR .tape .b", { opacity: 1, duration: 0.06, ease: "none" }, g(10.5) + 0.08)
+        .to("#aR .tape", { scale: 1, duration: 0.3, ease: "elastic.out(1,0.5)" }, g(10.5) + 0.1);             cue("scribble", g(10.5), 0.6);
+
+      /* BAR 4 · day 7: they meet in the middle and the bar line lands on one carton */
+      tl.to("#aL", { x: 205, rotation: 0, duration: 0.26, ease: "power3.in" }, B4 - 0.26);
+      tl.to("#aR", { x: -170, rotation: 0, duration: 0.26, ease: "power3.in" }, B4 - 0.26);                   cue("whoosh", B4 - 0.3, 0.7);
+      tl.to("#aL .size, #aR .size", { scaleX: 0.8, duration: 0.2, ease: "power2.in" }, B4 - 0.2);
+      tl.to("#aL, #aR", { opacity: 0, duration: 0.05, ease: "none" }, B4 - 0.07);
+      tl.to("#aBig", { opacity: 1, duration: 0.03, ease: "none" }, B4 - 0.03);
+      tl.fromTo("#aBig .size", { scale: 0.62 }, { scale: 1.3, duration: 0.6, ease: "elastic.out(1,0.55)", immediateRender: false }, B4);   cue("impact", B4, 1);
+      tl.fromTo("#burst", { opacity: 0.95, scale: 0.2 }, { opacity: 0, scale: 1.3, duration: 0.5, ease: "power2.out", immediateRender: false }, B4);
+      tl.fromTo("#aBig .note", { opacity: 0, scale: 1.7, rotation: -16 }, { opacity: 1, scale: 1, rotation: 4, duration: 0.22, ease: "power3.out" }, g(12.5));  cue("slap", g(12.5), 0.9);
+      E2.squash(tl, "#aBig .body", g(12.5) + 0.2, 0.035);
+
+      /* titles */
+      E2.blurOut(tl, "#t1 .in", B2 - 0.16, 0.14);
+      E2.wordsIn(tl, "#t2 .l1", B2); E2.wordsIn(tl, "#t2 .l2", B2 + 0.08); E2.blurOut(tl, "#t2 .in", B3 - 0.16, 0.14);
+      E2.wordsIn(tl, "#t3 .l1", B3); E2.wordsIn(tl, "#t3 .l2", B3 + 0.08); E2.blurOut(tl, "#t3 .in", B4 - 0.16, 0.14);
+      E2.wordsIn(tl, "#t4 .l1", B4); E2.stampIn(tl, "#t4 .l2", B4 + 0.04);
+
+      /* the ask */
+      E2.chipIn(tl, "#prompt .pill", g(2));                                                                   cue("pop", g(2), 0.7);
+      tl.to("#prompt .pill", { opacity: 0, scale: 0.94, y: -8, duration: 0.18, ease: "power2.in" }, g(2) + 3.3);
+
+      E2.publish({
+        id: "x3-milk", engine: "v2", look: "paper", format: "experiment", bpm: 100, bars: 4, dur: END,
+        cover: { t: 0, title: "יום 1. שני חלבים." },
+        prompt: { t: g(2), text: "שלחו לשותפים החדשים." },
+        beats: { payoff: B4, outro: null }, loop: true, voice: null,
+        music: { feel: "warm lo-fi, electric piano, soft drums", bpm: 100, bars: 4 },
+      });
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

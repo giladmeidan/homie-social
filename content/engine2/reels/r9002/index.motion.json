@@ -1,0 +1,8 @@
+{
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#t1 .l2", "bySec": 0.05 },
+    { "kind": "appearsBy", "selector": "#prompt .pill", "bySec": 3.0 },
+    { "kind": "before", "a": "#t1 .l2", "b": "#prompt .pill" },
+    { "kind": "appearsBy", "selector": "#aBig .note", "bySec": 7.9 }
+  ]
+}

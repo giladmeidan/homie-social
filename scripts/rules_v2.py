@@ -3,7 +3,8 @@
 The plan's rules used to exist only as text an agent could skip. These checks run in the
 render workflow and refuse a reel that breaks them, before it reaches Gilad's Telegram.
 
-Applies to a batch item that has "format", and to every daily reel from H27 on (reel 1027-1999).
+Applies to a batch item that has "format", to every daily reel from H27 on (reel 1027-1999), and to
+every Engine 2 reel ("engine": "v2", content/engine2).
 Batch item fields used here:
     "format":   one of FORMATS below (required for v2 reels)
     "slot":     "YYYY-MM-DD HH" Israel time of the schedule slot, e.g. "2026-11-22 13" (required)
@@ -13,6 +14,11 @@ Episode fields used here:
     window.COVER  = {t, title}          required (frame 0 is the cover)
     window.PROMPT = {t, text}           required: when the viewer is first asked to act (episode time)
     window.STRETCH                      at most 1.10
+
+Engine 2 reels say the same things differently (pre_check_v2, facts_check_v2):
+    E2.publish({cover: {t, title}, prompt: {t, text}, dur, format, ...})   in the reel's index.html
+    index.motion.json                   asserts on the rendered page that the headline is there at frame 0
+                                        and the ask by 3 s; the engine fails the build when it is not
 """
 import glob, json, os, re
 
@@ -36,7 +42,7 @@ SLOT_RE = re.compile(r'\d{4}-\d{2}-\d{2} \d{2}')
 
 def applies(item):
     reel = item.get('reel')
-    return bool(item.get('format')) or (isinstance(reel, int) and 1027 <= reel < 2000)
+    return bool(item.get('format')) or item.get('engine') == 'v2' or (isinstance(reel, int) and 1027 <= reel < 2000)
 
 
 def _num(src, pattern):
@@ -76,6 +82,64 @@ def pre_check(item, src, sent_dir):
             problems.append(f'slot {slot} already has reel {other}; add "replaces": {other} if this reel replaces it')
     if problems:
         raise ValueError('reels plan v2: ' + '; '.join(problems))
+
+
+def pre_check_v2(item, reel_dir, sent_dir):
+    """Engine 2: cheap checks on the batch item and the reel folder, before rendering. Raises ValueError."""
+    problems = []
+    fmt = item.get('format')
+    if fmt not in FORMATS:
+        problems.append(f'"format" must be one of {", ".join(FORMATS)} (got {fmt!r})')
+    slot = item.get('slot')
+    if slot is None and item.get('preview'):
+        pass  # a preview is sent as a plain video and takes no place in the schedule
+    elif not isinstance(slot, str) or not SLOT_RE.fullmatch(slot):
+        problems.append(f'"slot" must look like "2026-11-22 13" (got {slot!r})')
+    else:
+        other = slot_taken(slot, item.get('reel'), sent_dir)
+        if other is not None and item.get('replaces') != other:
+            problems.append(f'slot {slot} already has reel {other}; add "replaces": {other} if this reel replaces it')
+    try:
+        src = open(os.path.join(reel_dir, 'index.html'), encoding='utf8').read()
+    except OSError:
+        src = ''
+    if 'E2.publish(' not in src:
+        problems.append('index.html does not call E2.publish({...}): the reel must publish its cover, ask and length')
+    try:
+        rules = json.load(open(os.path.join(reel_dir, 'index.motion.json'), encoding='utf8')).get('assertions') or []
+        by = [a.get('bySec') for a in rules if isinstance(a, dict) and a.get('kind') == 'appearsBy'
+              and isinstance(a.get('bySec'), (int, float))]
+    except (ValueError, OSError, AttributeError):
+        problems.append('index.motion.json is missing or unreadable: it must assert the headline at frame 0 and the ask by 3 s')
+    else:
+        if not any(t <= 0.1 for t in by):
+            problems.append('index.motion.json must assert the headline at frame 0 ("appearsBy" with "bySec" 0.1 or less)')
+        if sum(1 for t in by if t <= PROMPT_BY + 1e-9) < 2:
+            problems.append(f'index.motion.json must also assert the ask by {PROMPT_BY:.0f}s (a second "appearsBy")')
+    if problems:
+        raise ValueError('reels plan v2 (Engine 2): ' + '; '.join(problems))
+
+
+def facts_check_v2(item, meta):
+    """Engine 2: checks on what the page published (E2.publish -> build/export.json), after the build."""
+    problems = []
+    cover, prompt = meta.get('cover') or {}, meta.get('prompt') or {}
+    if not cover.get('title'):
+        problems.append('no cover published: frame 0 must be the scene with its headline')
+    elif isinstance(cover.get('t'), (int, float)) and cover['t'] > 0.1:
+        problems.append(f'the cover is published at {cover["t"]}s; it must be frame 0')
+    if not isinstance(prompt.get('t'), (int, float)) or not prompt.get('text'):
+        problems.append('no prompt published: say when the viewer is first asked to act')
+    elif prompt['t'] > PROMPT_BY + 1e-9:
+        problems.append(f'the prompt first shows at {prompt["t"]:.1f}s; it must be on screen by {PROMPT_BY:.0f}s')
+    if not isinstance(meta.get('dur'), (int, float)):
+        problems.append('no length published ("dur")')
+    if meta.get('format') and item.get('format') and meta['format'] != item['format']:
+        problems.append(f'the batch says format {item["format"]!r}, the reel publishes {meta["format"]!r}')
+    if meta.get('voice'):
+        problems.append('the reel declares a voice; Engine 2 has no voice step yet')
+    if problems:
+        raise RuntimeError('reels plan v2 (Engine 2): ' + '; '.join(problems))
 
 
 def slot_taken(slot, reel, sent_dir):

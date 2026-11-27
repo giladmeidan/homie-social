@@ -122,6 +122,7 @@ nightly task ──push──▶ content/episodes/rNN.js + content/batches/<date
 ```
 
 - **Render engine:** `content/engine/` (same files as the series engine in the Project, fonts included). Episodes in `content/episodes/`.
+- **Engine 2** (`content/engine2/`, from 27.11.2026): a second engine next to the first, HTML + GSAP rendered by HyperFrames, illustrated look, sampled-instrument music. A batch entry uses it with `"engine": "v2"`; its episode is the folder `content/engine2/reels/rNN/`. Same checks, same Telegram approval. Its title gets `E2` so the two engines can be compared on the dashboard and in `content/insights.json`. The workflow sets it up only when a waiting reel needs it. Details: `content/engine2/README.md`. Test reel: 9002 (`content/batches/test-engine2-2026-11-27.json`, the pilot, sent as a plain video).
 - **Batch file:** `content/batches/<date>.json` lists the reels with their caption, title and optional publish time (`"at": "2026-11-21 19:00"`, Israel time). Format at the top of `scripts/render-batch.py`.
 - **Checks before sending:** 1080×1920, 30 fps, audio present, length matches the episode, loudness and no clipping (series bible section 4). A reel that fails is not sent.
 - **No exact repeats:** a reel is refused if its episode file is identical to an earlier one (ignoring spacing and the audio seed) or its caption opens with the same line as an earlier caption in `content/batches/`.
@@ -193,7 +194,7 @@ npm run dashboard     # opens it and copies the admin key for the sign-in box
 - **`GET /api/insights`** (admin key): the last 30 days per reel and per format (first-day views against the typical reel, watch time, skip rate, shares/saves/comments per 1,000 reached) and every rejection with its reason. `src/feedback.js`.
 - **`content/insights.json`**: `.github/workflows/insights.yml` copies `/api/insights` into the repo at 10:40 and 17:40 UTC, because the reel-making task cannot reach the Worker. Run it by hand from Actions → Copy insights.
 - **Sunday review**: every Sunday from 09:30 Israel time the bot sends five lines on last week's reels (best, weakest, formats, rejections, followers).
-- **Reels plan v2 checks** (`scripts/rules_v2.py`, run by `render-batch.py`): daily reels from H27 on must carry `format` and `slot` in the batch file, declare `window.COVER` and `window.PROMPT` (on screen by 3 s), stay inside the format's length, keep the brand ending to 1 s (1.5 s with an end card, feature reels only), keep FEAT cards to feature reels, and keep the voice to about 200 characters. One reel per slot unless the batch entry says `"replaces": <reel>`. Tests: `python3 -m unittest discover -s test -p 'test_*.py'`.
+- **Reels plan v2 checks** (`scripts/rules_v2.py`, run by `render-batch.py`): daily reels from H27 on must carry `format` and `slot` in the batch file, declare `window.COVER` and `window.PROMPT` (on screen by 3 s), stay inside the format's length, keep the brand ending to 1 s (1.5 s with an end card, feature reels only), keep FEAT cards to feature reels, and keep the voice to about 200 characters. One reel per slot unless the batch entry says `"replaces": <reel>`. Engine 2 reels get the same rules from what the page publishes and from its `index.motion.json` (`pre_check_v2`, `facts_check_v2`). Tests: `python3 -m unittest discover -s test -p 'test_*.py'`.
 
 ## Development
 
@@ -223,6 +224,7 @@ npm run logs      # live logs from the deployed Worker
 | `scripts/render-batch.py` | Render, check and enqueue the reels in `content/batches/` |
 | `scripts/backfill-beats.py` | Saves the structure of reels sent before it was recorded (workflow: *backfill beats*) |
 | `content/engine/beats.py` | Reads a reel's structure (scenes, end card, stretch) at render time |
+| `content/engine2/` | Engine 2: its own README, setup and build scripts, and one folder per reel |
 | `scripts/notify-failures.mjs` | Telegram alert when the workflow could not send a reel |
 | `.github/workflows/render-reels.yml` | Runs the above on every pushed batch |
 | `schema.sql` | Database tables |

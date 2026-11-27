@@ -1,0 +1,11 @@
+node_modules/
+export/
+audio/cache/
+base/fonts/
+base/gsap.min.js
+base/SplitText.min.js
+base/grain.png
+reels/*/.hyperframes/
+reels/*/assets/base/
+reels/*/assets/mix.wav
+reels/*/build/

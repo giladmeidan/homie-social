@@ -7,6 +7,7 @@ Run by .github/workflows/render-reels.yml. Locally:
     python3 scripts/render-batch.py                  # every batch, skipping reels already sent
     python3 scripts/render-batch.py content/batches/2026-11-20.json
     DRY_RUN=1 python3 scripts/render-batch.py ...    # render + check, don't enqueue
+    python3 scripts/render-batch.py --needs-engine2  # prints true when a waiting reel says "engine": "v2"
 
 Batch file format (written by the nightly reel task):
 
@@ -23,12 +24,18 @@ Batch file format (written by the nightly reel task):
           "format": "pick",                        # v2 reels: see scripts/rules_v2.py (pick, pain, roommate,
           "slot": "2026-11-22 13",                 #   feature, smart, experiment), the schedule slot, and
           "replaces": null,                        #   optionally the reel this one replaces in that slot
-          "preview": false                         # optional: true = send to Telegram as a plain video
+          "preview": false,                        # optional: true = send to Telegram as a plain video
                                                    #   with the caption (no Approve button, nothing is
                                                    #   posted); Gilad downloads and uploads it himself
+          "engine": "v2"                           # optional: build with Engine 2 (content/engine2). The
+                                                   #   episode is then the folder content/engine2/reels/r48/
+                                                   #   (index.html + index.motion.json). Left out = Engine 1.
         }
       ]
     }
+
+Engine 2 reels get "E2" added to their title (the dashboard and content/insights.json show it, so the two
+engines can be compared) and "engine": "v2" in their sent marker.
 
 Markers (committed back by the workflow so a re-run never sends a reel twice):
     content/sent/<reel>.json     enqueued; never rendered again
@@ -44,6 +51,8 @@ import rules_v2  # noqa: E402  reels plan v2 checks
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENGINE = os.path.join(ROOT, 'content', 'engine')
 EPISODES = os.path.join(ROOT, 'content', 'episodes')
+ENGINE2 = os.path.join(ROOT, 'content', 'engine2')
+REELS2 = os.path.join(ENGINE2, 'reels')   # Engine 2 episodes: one folder per reel
 SENT = os.path.join(ROOT, 'content', 'sent')
 FAILED = os.path.join(ROOT, 'content', 'failed')
 BUILD = os.path.join(ROOT, 'build')
@@ -82,6 +91,45 @@ def write_marker(folder, reel, data):
         f.write('\n')
 
 
+def is_v2(item):
+    """True for a batch entry built with Engine 2 (content/engine2)."""
+    return item.get('engine') == 'v2'
+
+
+def title_of(item):
+    """The title shown in Telegram and on the dashboard. Engine 2 reels carry "E2" as their own part,
+    after the format, so the format grouping (second part of the title) stays as it is."""
+    title = item.get('title') or item['name']
+    if not is_v2(item):
+        return title
+    parts = [p.strip() for p in title.split('·')]
+    if 'E2' in parts:
+        return title
+    parts.insert(2, 'E2') if len(parts) >= 3 else parts.append('E2')
+    return ' · '.join(parts)
+
+
+def needs_engine2(files):
+    """True when a reel that would be rendered now is an Engine 2 reel (the workflow then sets Engine 2 up)."""
+    for bf in files:
+        try:
+            batch = json.load(open(bf, encoding='utf8'))
+            items = [i for i in batch.get('reels', []) if isinstance(i, dict) and is_v2(i)]
+        except (ValueError, OSError, AttributeError):
+            continue
+        for item in items:
+            try:
+                reel = int(item.get('reel'))
+            except (TypeError, ValueError):
+                continue
+            if os.path.exists(marker(SENT, reel)):
+                continue
+            if os.path.exists(marker(FAILED, reel)) and not RETRY_FAILED:
+                continue
+            return True
+    return False
+
+
 def validate(item):
     for k in ('reel', 'episode', 'name', 'caption'):
         if not item.get(k):
@@ -90,6 +138,15 @@ def validate(item):
         raise ValueError(f'episode must look like r48, got {item["episode"]!r}')
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', item['name']):
         raise ValueError(f'name must be lowercase letters, digits and dashes, got {item["name"]!r}')
+    if item.get('engine') not in (None, 'v1', 'v2'):
+        raise ValueError(f'"engine" must be "v2" or left out, got {item["engine"]!r}')
+    if is_v2(item):
+        reel_dir = os.path.join(REELS2, item['episode'])
+        if not os.path.exists(os.path.join(reel_dir, 'index.html')):
+            raise ValueError(f'content/engine2/reels/{item["episode"]}/index.html not found')
+        check_not_repeat(item)
+        rules_v2.pre_check_v2(item, reel_dir, SENT)
+        return
     if not os.path.exists(os.path.join(EPISODES, item['episode'] + '.js')):
         raise ValueError(f'content/episodes/{item["episode"]}.js not found')
     check_not_repeat(item)
@@ -119,11 +176,20 @@ def _episode_body(path):
 def check_not_repeat(item):
     """Refuses a reel that is an exact copy of an earlier one: the same episode
     source, or a caption that opens with the same line as an earlier caption."""
-    me = os.path.join(EPISODES, item['episode'] + '.js')
+    if is_v2(item):
+        me = os.path.join(REELS2, item['episode'], 'index.html')
+        # test reels (r9000 and up) are not earlier reels: a test may later be posted under a real number
+        others = [o for o in glob.glob(os.path.join(REELS2, 'r*', 'index.html'))
+                  if not re.fullmatch(r'r9\d{3,}', os.path.basename(os.path.dirname(o)))]
+        name_of = lambda o: 'content/engine2/reels/' + os.path.basename(os.path.dirname(o))
+    else:
+        me = os.path.join(EPISODES, item['episode'] + '.js')
+        others = glob.glob(os.path.join(EPISODES, 'r*.js'))
+        name_of = os.path.basename
     body = _episode_body(me)
-    for other in glob.glob(os.path.join(EPISODES, 'r*.js')):
+    for other in others:
         if os.path.abspath(other) != os.path.abspath(me) and _episode_body(other) == body:
-            raise ValueError(f'episode is identical to {os.path.basename(other)}')
+            raise ValueError(f'episode is identical to {name_of(other)}')
     opening = _opening(item['caption'])
     if not opening:
         return
@@ -163,6 +229,56 @@ def build(item):
     beats_path = os.path.join(work, ep + '_beats.json')
     beats = json.load(open(beats_path)) if os.path.exists(beats_path) else None
     return out, dur, voiced, beats, voice
+
+
+def beats_v2(meta):
+    """The reel's structure for the dashboard's retention insight, in the shape content/engine/beats.py writes,
+    from what the Engine 2 page published (E2.publish)."""
+    dur = meta.get('dur')
+    bpm, bars = meta.get('bpm'), meta.get('bars')
+    scenes = []
+    if isinstance(bpm, (int, float)) and bpm > 0 and isinstance(bars, int):
+        bar = 240.0 / bpm   # four beats
+        scenes = [[f'bar{i + 1}', round(i * bar, 3), round(min((i + 1) * bar, dur or (i + 1) * bar), 3)] for i in range(bars)]
+    out = {'dur': dur, 'scenes': scenes, 'endcard': None, 'wordmarks': [], 'stretch': 1.0}
+    declared = {k: v for k, v in (meta.get('beats') or {}).items() if k in ('payoff', 'outro') and isinstance(v, (int, float))}
+    if declared:
+        out['declared'] = declared
+    return out
+
+
+def build_env_v2():
+    """The environment Engine 2's build runs in: everything except the pipeline's secrets. The renderer and
+    the packages it installs are third-party code and have no use for them."""
+    secret = re.compile(r'TOKEN|SECRET|PASSWORD|API_KEY|^TELEGRAM_|^ELEVENLABS_|^HOMIE_SOCIAL_URL$')
+    env = {k: v for k, v in os.environ.items() if not secret.search(k)}
+    env['E2_EXPORT_DIR'] = EXPORT
+    return env
+
+
+def build_v2(item):
+    """Builds an Engine 2 reel (content/engine2/build.sh) in build/e2/<episode>. Same return as build(),
+    plus the fields the sent marker gets."""
+    ep, name = item['episode'], item['name']
+    work = os.path.join(BUILD, 'e2', ep)
+    shutil.rmtree(work, ignore_errors=True)
+    shutil.copytree(os.path.join(REELS2, ep), work, ignore=shutil.ignore_patterns('build', '.hyperframes'))
+    os.makedirs(EXPORT, exist_ok=True)
+    out = os.path.join(EXPORT, name + '.mp4')
+    if os.path.exists(out):
+        os.remove(out)
+    r = subprocess.run(['bash', os.path.join(ENGINE2, 'build.sh'), work, name], cwd=ENGINE2, text=True,
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=build_env_v2())
+    log = r.stdout or ''
+    if r.returncode != 0 or re.search(r'^(ERR|FAIL)\b', log, re.M):
+        told = [ln.strip() for ln in log.splitlines() if re.match(r'\s*(FAIL|ERR|error:|warning:|check:|postcheck:)', ln)]
+        why = ' | '.join(ln for ln in told if re.match(r'(FAIL|ERR|error:)', ln))[:280] or 'see the run log'
+        raise RuntimeError(f'Engine 2 build failed: {why}\n' + ('\n'.join(told[-12:]) or log.strip()[-1500:]))
+    if not os.path.exists(out):
+        raise RuntimeError('build finished but no mp4 was written')
+    meta = json.load(open(os.path.join(work, 'build', 'export.json'), encoding='utf8')).get('meta') or {}
+    rules_v2.facts_check_v2(item, meta)
+    return out, meta.get('dur'), False, beats_v2(meta), None, {'engine': 'v2', 'look': meta.get('look')}
 
 
 def check(path, dur):
@@ -207,7 +323,7 @@ def enqueue(item, path, beats=None):
     with open(cap, 'w') as f:
         f.write(item['caption'].strip() + '\n')
     cmd = ['node', os.path.join(ROOT, 'scripts', 'enqueue.mjs'), path, '--caption-file', cap,
-           '--title', item.get('title') or item['name']]
+           '--title', title_of(item)]
     if beats:  # reel structure for the dashboard's retention insight
         bp = os.path.join(BUILD, f"{item['episode']}_beats.json")
         with open(bp, 'w') as f:
@@ -229,16 +345,21 @@ def preview(item, path, manual=False):
     if DRY_RUN:
         return 'dry-run'
     if manual:
-        text = f"📥 {item.get('title') or item['name']}\n\n{item['caption'].strip()}"
+        text = f"📥 {title_of(item)}\n\n{item['caption'].strip()}"
     else:
-        text = (f"🎧 {item.get('title') or item['name']}\n"
+        text = (f"🎧 {title_of(item)}\n"
                 'Voice preview (ElevenLabs free plan). Not in the approval queue and not for posting.')
     out = sh(['node', os.path.join(ROOT, 'scripts', 'telegram-preview.mjs'), path, text], cwd=ROOT)
     return 'preview ' + out.strip()[-80:]
 
 
 def main():
-    files = sys.argv[1:] or sorted(glob.glob(os.path.join(ROOT, 'content', 'batches', '*.json')))
+    args = sys.argv[1:]
+    all_batches = sorted(glob.glob(os.path.join(ROOT, 'content', 'batches', '*.json')))
+    if args[:1] == ['--needs-engine2']:
+        print('true' if needs_engine2(args[1:] or all_batches) else 'false')
+        return
+    files = args or all_batches
     results = []
     for bf in files:
         batch = json.load(open(bf))
@@ -253,7 +374,7 @@ def main():
             if os.path.exists(marker(FAILED, reel)) and not RETRY_FAILED:
                 continue
             ep_file = os.path.join(EPISODES, str(item.get('episode')) + '.js')
-            if (os.path.exists(ep_file) and 'window.VOICE' in open(ep_file, encoding='utf8').read()
+            if (not is_v2(item) and os.path.exists(ep_file) and 'window.VOICE' in open(ep_file, encoding='utf8').read()
                     and not os.environ.get('ELEVENLABS_API_KEY')):
                 # no marker: it renders on the first run after the secret is added
                 results.append(('waiting', f'{label}: has a voiceover, waiting for the ELEVENLABS_API_KEY secret'))
@@ -262,7 +383,11 @@ def main():
             print(f'::group::{label}', flush=True)
             try:
                 validate(item)
-                path, dur, voiced, beats, voice = build(item)
+                extra = {}   # more fields for the sent marker (Engine 2: engine and look)
+                if is_v2(item):
+                    path, dur, voiced, beats, voice, extra = build_v2(item)
+                else:
+                    path, dur, voiced, beats, voice = build(item)
                 warnings, length = check(path, dur)
                 if rules_v2.applies(item):
                     rules_v2.post_check(item, length, beats, voice)
@@ -278,7 +403,7 @@ def main():
                     write_marker(SENT, reel, {'reel': reel, 'name': item['name'], 'batch': batch.get('batch'),
                                               'format': item.get('format'), 'slot': item.get('slot'),
                                               'queued_as': queued, 'length': round(length, 2), 'warnings': warnings, 'beats': beats,
-                                              'sent_at': datetime.now(TZ).isoformat(timespec='seconds')})
+                                              'sent_at': datetime.now(TZ).isoformat(timespec='seconds'), **extra})
                     if os.path.exists(marker(FAILED, reel)):
                         os.remove(marker(FAILED, reel))
                 note = f' ({"; ".join(warnings)})' if warnings else ''
