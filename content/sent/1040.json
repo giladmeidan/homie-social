@@ -1,0 +1,35 @@
+{
+  "reel": 1040,
+  "name": "reel-h040-roommate-ac-tally",
+  "batch": "h040",
+  "format": "roommate",
+  "slot": "2026-11-27 13",
+  "queued_as": "c3508083ef9f",
+  "length": 10.4,
+  "warnings": [],
+  "beats": {
+    "dur": 10.4,
+    "scenes": [
+      [
+        "a",
+        0.0,
+        6.6
+      ],
+      [
+        "b",
+        6.6,
+        10.4
+      ]
+    ],
+    "endcard": null,
+    "wordmarks": [
+      9.6
+    ],
+    "stretch": 1.0,
+    "declared": {
+      "payoff": 6.6,
+      "outro": 8.6
+    }
+  },
+  "sent_at": "2026-11-27T13:15:06+02:00"
+}
